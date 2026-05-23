@@ -1,0 +1,29 @@
+{
+  "project_type": "Next.js 16 admin dashboard with React 19, Tailwind CSS v4, shadcn/ui (Radix), Prisma ORM",
+  "language": "TypeScript",
+  "build_system": "Next.js with @tailwindcss/postcss v4 - uses @import 'tailwindcss' in globals.css, no tailwind.config.js (Tailwind v4 uses CSS-based config via @theme inline)",
+  "test_framework": "No test framework configured - only lint via next lint",
+  "build_command": "cd /projects/sandbox/Si-Admin && npm run build",
+  "test_command": "cd /projects/sandbox/Si-Admin && npm run lint",
+  "verification_instructions": "Run npm run build to verify TypeScript compilation and Next.js build succeeds. Run npm run lint for code quality.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/Si-Admin && npm install",
+  "environment_constraints": "Check network mode. Next.js fonts from Google Fonts require network access during build. Tailwind v4 uses CSS-native configuration (no tailwind.config.js).",
+  "contribution_requirements": "Indonesian UI labels. Follow shadcn/ui patterns for components. Use @/lib/utils cn() for class merging.",
+  "key_patterns": "shadcn/ui CVA-based components in src/components/ui/. Root layout in src/app/layout.tsx uses next/font/google. Dashboard layout is client component with Sheet for mobile nav. Dashboard page is server component with Prisma queries. CSS variables defined in globals.css using oklch color space under @theme inline block.",
+  "relevant_files": [
+    "src/app/layout.tsx",
+    "src/app/globals.css",
+    "src/app/(dashboard)/layout.tsx",
+    "src/app/(dashboard)/page.tsx",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/button.tsx",
+    "src/components/ui/separator.tsx",
+    "src/lib/utils.ts",
+    "package.json",
+    "postcss.config.mjs",
+    "components.json"
+  ],
+  "directory_structure": "src/app/(dashboard)/ - dashboard route group with layout and pages. src/components/ui/ - shadcn components. src/lib/ - utilities and prisma client. prisma/ - schema and seed."
+}

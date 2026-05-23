@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Address 5 review issues: StaggerReveal grid breakage, missing prefers-reduced-motion, circular font variable, invalid Tailwind arbitrary value syntax, and reduced contrast on card titles.",
+  "status": "completed",
+  "steps": [
+    "STEP 1 - Remove StaggerReveal wrapper from page.tsx and apply animate-stagger-fade-in class + --stagger-delay inline style directly on each Card element so col-span/row-span grid classes work correctly",
+    "STEP 2 - Add @media (prefers-reduced-motion: reduce) rules in globals.css that set animation: none and opacity: 1 on animated classes",
+    "STEP 3 - Fix circular font variable references in @theme inline block: rename --font-display to --font-family-display and --font-body to --font-family-body so Tailwind generates utility classes without self-referencing",
+    "STEP 4 - Fix invalid arbitrary value syntax: change to-oklch(...) to to-[oklch(...)] in sidebar layout",
+    "STEP 5 - Change text-card-foreground/80 to text-card-foreground for full contrast on card titles"
+  ],
+  "acceptance_criteria": [
+    "Bento grid col-span and row-span classes are applied directly to Card elements (no wrapper div between grid and cards)",
+    "prefers-reduced-motion media query sets animation: none and opacity: 1",
+    "Font variables in @theme inline use --font-family-display and --font-family-body namespace",
+    "Sidebar gradient uses square bracket syntax for arbitrary oklch value",
+    "Card titles use full text-card-foreground without opacity modifier",
+    "npm run build passes"
+  ],
+  "verification": [
+    "npm run build passes cleanly"
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 review issues fixed. Build passes cleanly. StaggerReveal component still exists in src/components/ui/ but is no longer imported by the dashboard page. The same 19 pre-existing lint issues remain in unrelated files."
+}
