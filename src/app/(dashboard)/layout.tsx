@@ -81,7 +81,7 @@ export default function DashboardLayout({
       {/* Desktop Sidebar */}
       <aside className="noise-overlay hidden w-64 md:flex md:flex-col relative overflow-hidden bg-sidebar border-r border-sidebar-border">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sidebar via-sidebar to-oklch(0.75_0.18_180_/_0.05) pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-sidebar via-sidebar to-[oklch(0.75_0.18_180_/_0.05)] pointer-events-none" />
 
         {/* Diagonal accent stripe at the boundary */}
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-primary via-accent to-primary opacity-60" />

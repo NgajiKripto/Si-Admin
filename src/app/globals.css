@@ -39,8 +39,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
+  --font-family-display: var(--font-display);
+  --font-family-body: var(--font-body);
 }
 
 :root {
@@ -253,4 +253,25 @@
 .nav-sweep > * {
   position: relative;
   z-index: 1;
+}
+
+/* Accessibility: respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-stagger-fade-in,
+  .animate-slide-in-left {
+    animation: none;
+    opacity: 1;
+  }
+
+  .animate-pulse-glow {
+    animation: none;
+  }
+
+  .nav-sweep::after {
+    transition: none;
+  }
+
+  .nav-sweep:hover {
+    transform: none;
+  }
 }
