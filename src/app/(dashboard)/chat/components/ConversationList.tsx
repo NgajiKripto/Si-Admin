@@ -49,10 +49,6 @@ export default function ConversationList({
   const [channelFilter, setChannelFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchConversations();
-  }, [search, channelFilter]);
-
   async function fetchConversations() {
     setLoading(true);
     try {
@@ -72,6 +68,11 @@ export default function ConversationList({
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, channelFilter]);
 
   function formatTime(dateStr: string | null) {
     if (!dateStr) return "";
