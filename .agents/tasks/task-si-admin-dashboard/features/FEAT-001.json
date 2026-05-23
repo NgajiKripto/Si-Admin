@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Initialize Next.js 14+ project with TypeScript, Tailwind CSS, shadcn/ui, Prisma ORM with SQLite, and complete dashboard layout including sidebar navigation. Set up all foundational infrastructure for the Si-Admin application.",
+  "status": "in_progress",
+  "steps": [
+    "Initialize Next.js 14+ project with TypeScript and App Router in /projects/sandbox/Si-Admin using 'npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias @/* --use-npm' (use --yes or similar flags to avoid interactive prompts). If the directory is non-empty, handle accordingly (may need to init in a temp dir and move files, or use --force).",
+    "Install and configure shadcn/ui: run 'npx shadcn@latest init' with default settings (New York style, slate color, CSS variables). Then add essential components: button, card, input, label, badge, avatar, separator, sheet, dropdown-menu, dialog, textarea, select, tabs, table, calendar, popover, toast, command, scroll-area.",
+    "Install Prisma: 'npm install prisma @prisma/client' and 'npx prisma init --datasource-provider sqlite'.",
+    "Create the complete Prisma schema at prisma/schema.prisma with all models: BusinessProfile (id, name, type, description, settings JSON), Channel (id, name, type, isActive, config JSON, businessId), Customer (id, name, phone, email, channel, notes, createdAt), Conversation (id, customerId, channelId, status, lastMessage, lastMessageAt, unreadCount), Message (id, conversationId, content, sender enum ADMIN/CUSTOMER, sentAt, isRead), FollowUp (id, customerId, title, description, dueDate, status enum PENDING/DONE/OVERDUE, priority, createdAt), Feedback (id, customerId, conversationId, content, rating, templateUsed, sentAt), StockCategory (id, name, description, businessId), StockItem (id, name, sku, categoryId, quantity, minThreshold, unit, price, lastRestocked), StockMovement (id, stockItemId, type enum IN/OUT, quantity, notes, createdAt), FeedbackTemplate (id, name, content, category).",
+    "Create prisma/seed.ts with comprehensive demo data in Bahasa Indonesia: 1 business profile (Toko Serba Ada), 4 channels (WhatsApp, Telegram, Email, Instagram), 10 customers, 15+ conversations with messages, 8 follow-ups (mix of PENDING/DONE/OVERDUE), 5 feedback entries, 3 stock categories (Elektronik, Makanan & Minuman, Aksesoris), 15 stock items with varied quantities (some near/below threshold), 20 stock movements, and 5 feedback templates.",
+    "Add seed script to package.json: add 'prisma' section with seed command 'ts-node --compiler-options {\"module\":\"commonjs\"} prisma/seed.ts', install ts-node as dev dependency.",
+    "Create src/lib/prisma.ts - Prisma client singleton for Next.js (prevent multiple instances in dev).",
+    "Create the main dashboard layout at src/app/(dashboard)/layout.tsx with a professional sidebar navigation containing: Dashboard (home icon), Chat (message icon), Follow Up (calendar icon), Feedback (star icon), Stok Barang (package icon), Pengaturan (settings icon). Use a responsive design with a collapsible sidebar on mobile (Sheet component). Include a top header bar with business name and user avatar.",
+    "Create src/app/(dashboard)/page.tsx as the dashboard overview showing key metrics cards: Total Percakapan Aktif, Follow Up Tertunda, Stok Rendah alerts, Feedback Terkirim. Include a recent activity section and quick action buttons. All text in Bahasa Indonesia.",
+    "Create src/app/layout.tsx root layout with proper metadata (title: Si-Admin, description in Bahasa Indonesia), fonts (Inter from Google Fonts), and global providers.",
+    "Create src/lib/utils.ts with cn() helper for tailwind class merging (clsx + tailwind-merge, install both).",
+    "Run 'npx prisma generate' and 'npx prisma db push' and 'npx prisma db seed' to set up the database with demo data.",
+    "Run 'npm run build' to verify the entire project compiles successfully."
+  ],
+  "acceptance_criteria": [
+    "Running 'npm run build' completes without errors",
+    "Running 'npx prisma db push' creates the SQLite database successfully",
+    "Running 'npx prisma db seed' populates demo data without errors",
+    "The dashboard page renders with sidebar navigation and metric cards",
+    "All UI text is in Bahasa Indonesia",
+    "shadcn/ui components are properly installed and configured"
+  ],
+  "verification": [
+    "npm run build",
+    "npx prisma db push --force-reset && npx prisma db seed"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

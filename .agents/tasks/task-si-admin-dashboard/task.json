@@ -1,0 +1,7 @@
+{
+  "task_id": "task-si-admin-dashboard",
+  "task_description": "Build Si-Admin - a comprehensive admin dashboard application for managing business operations including chat management, follow-up system, customer feedback, stock/inventory management, business type customization, and multi-channel support. Built with Next.js 14+, TypeScript, Tailwind CSS, shadcn/ui, and Prisma with SQLite.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

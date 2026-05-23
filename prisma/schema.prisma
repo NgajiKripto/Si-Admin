@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BusinessProfile {
+  id          String          @id @default(cuid())
+  name        String
+  type        String
+  description String?
+  settings    String?
+  channels    Channel[]
+  categories  StockCategory[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Channel {
+  id            String          @id @default(cuid())
+  name          String
+  type          String
+  isActive      Boolean         @default(true)
+  config        String?
+  businessId    String
+  business      BusinessProfile @relation(fields: [businessId], references: [id])
+  conversations Conversation[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  channel       String?
+  notes         String?
+  conversations Conversation[]
+  followUps     FollowUp[]
+  feedbacks     Feedback[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  customerId    String
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  channelId     String
+  channelRef    Channel   @relation(fields: [channelId], references: [id])
+  status        String    @default("ACTIVE")
+  lastMessage   String?
+  lastMessageAt DateTime?
+  unreadCount   Int       @default(0)
+  messages      Message[]
+  feedbacks     Feedback[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+/// sender field uses: "ADMIN" | "CUSTOMER"
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  content        String
+  sender         String
+  sentAt         DateTime     @default(now())
+  isRead         Boolean      @default(false)
+}
+
+/// status field uses: "PENDING" | "DONE" | "OVERDUE"
+model FollowUp {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  title       String
+  description String?
+  dueDate     DateTime
+  status      String   @default("PENDING")
+  priority    String   @default("MEDIUM")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Feedback {
+  id             String        @id @default(cuid())
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  content        String
+  rating         Int
+  templateUsed   String?
+  sentAt         DateTime      @default(now())
+}
+
+model StockCategory {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  businessId  String
+  business    BusinessProfile @relation(fields: [businessId], references: [id])
+  items       StockItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model StockItem {
+  id            String          @id @default(cuid())
+  name          String
+  sku           String          @unique
+  categoryId    String
+  category      StockCategory   @relation(fields: [categoryId], references: [id])
+  quantity      Int             @default(0)
+  minThreshold  Int             @default(5)
+  unit          String          @default("pcs")
+  price         Float           @default(0)
+  lastRestocked DateTime?
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+/// type field uses: "IN" | "OUT"
+model StockMovement {
+  id          String    @id @default(cuid())
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id])
+  type        String
+  quantity    Int
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model FeedbackTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
