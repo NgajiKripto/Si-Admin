@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the Knowledge Base (Basis Pengetahuan) page with full CRUD functionality for training data management. Includes API routes and UI components for inputting, editing, categorizing, and previewing knowledge entries.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create API routes at src/app/api/knowledge/route.ts with GET (list with search, filter by category, pagination) and POST (create new entry) handlers following the pattern in src/app/api/stok/route.ts",
     "Create API route at src/app/api/knowledge/[id]/route.ts with GET (single entry), PUT (update), and DELETE handlers",
@@ -31,5 +31,5 @@
     "Run: npm run lint - should pass or show only pre-existing warnings"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All API routes (GET/POST /api/knowledge, GET/PUT/DELETE /api/knowledge/[id], POST /api/knowledge/test) implemented following src/app/api/stok/route.ts pattern. Page uses client component approach (like stok page) with Tabs for category filtering. npm run build passes successfully. npm run lint has pre-existing config issue (same as FEAT-001). The page is a client component for interactivity (tabs + state management). Next.js 16 uses Promise-based params in dynamic route handlers."
 }
