@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement Chat Management and Follow Up System pages. Chat page includes conversation list, message view, reply functionality, search, and multi-conversation handling. Follow Up page includes task list with status filters, scheduling form, calendar view, and automated status tracking.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/app/(dashboard)/chat/page.tsx - Main chat management page with a split-panel layout: left panel shows conversation list (searchable, filterable by channel and status), right panel shows selected conversation messages. Include customer info header, message bubbles (different styles for admin vs customer), message input with send button, and conversation status indicators (unread count badges).",
     "Create src/app/(dashboard)/chat/components/ConversationList.tsx - Client component with search input, channel filter dropdown, list of conversations showing customer name, last message preview, timestamp, unread badge, and channel icon. Clicking a conversation selects it.",
