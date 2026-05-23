@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Initialize Next.js 14+ project with TypeScript, Tailwind CSS, shadcn/ui, Prisma ORM with SQLite, and complete dashboard layout including sidebar navigation. Set up all foundational infrastructure for the Si-Admin application.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Initialize Next.js 14+ project with TypeScript and App Router in /projects/sandbox/Si-Admin using 'npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias @/* --use-npm' (use --yes or similar flags to avoid interactive prompts). If the directory is non-empty, handle accordingly (may need to init in a temp dir and move files, or use --force).",
     "Install and configure shadcn/ui: run 'npx shadcn@latest init' with default settings (New York style, slate color, CSS variables). Then add essential components: button, card, input, label, badge, avatar, separator, sheet, dropdown-menu, dialog, textarea, select, tabs, table, calendar, popover, toast, command, scroll-area.",
@@ -31,5 +31,5 @@
     "npx prisma db push --force-reset && npx prisma db seed"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Used Prisma v5 (not v7) because v7 has breaking changes requiring prisma.config.ts for datasource URL. SQLite does not support enums in Prisma, so enum fields (Sender, FollowUpStatus, MovementType) are stored as String type with convention documented in schema comments. Used tsx instead of ts-node for seed script due to TypeScript compatibility issues. Next.js build was successful with force-dynamic export for the dashboard page."
 }
