@@ -17,10 +17,6 @@ export default function KnowledgeStats() {
     categories: {},
   });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
   async function fetchStats() {
     try {
       const res = await fetch("/api/knowledge?limit=1000");
@@ -45,6 +41,10 @@ export default function KnowledgeStats() {
       console.error("Error fetching stats:", error);
     }
   }
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
