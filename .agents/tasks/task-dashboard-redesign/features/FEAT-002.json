@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Complete visual redesign of the dashboard applying bold, distinctive design principles: custom typography, dramatic color palette, motion/animations, asymmetric spatial composition, atmospheric backgrounds, and decorative details. This covers the global styles, root layout fonts, dashboard layout (sidebar + header), and main dashboard page (metrics + activity lists).",
+  "status": "pending",
+  "steps": [
+    "STEP 1 - Typography & Root Layout (src/app/layout.tsx): Replace Inter font with a distinctive font pairing from Google Fonts. Use a bold display font (e.g., Space Grotesk, Syne, or Clash Display via next/font/google) for headings and a refined body font (e.g., DM Sans, Outfit, or General Sans) for text. Set up CSS custom properties --font-display and --font-body.",
+    "STEP 2 - Global Styles & Color Theme (src/app/globals.css): Redesign the entire color palette. Replace the generic neutral oklch values with a cohesive, bold theme. Choose a dominant dark base (e.g., deep navy/charcoal like oklch(0.15 0.02 260)) with sharp accent colors (e.g., electric teal, amber, coral). Add CSS keyframe animations for staggered fade-in, slide-up reveals, subtle pulse effects. Add utility classes for grain/noise overlay texture, gradient mesh backgrounds. Add custom @theme inline font-family entries for the new fonts.",
+    "STEP 3 - Dashboard Layout Redesign (src/app/(dashboard)/layout.tsx): Transform the standard sidebar into something distinctive. Ideas: use a slim icon-rail sidebar on desktop with a floating expanded panel on hover, OR a full-height dark sidebar with geometric decorative patterns/diagonal accent line. Add a subtle gradient or noise texture to the sidebar background. Make the header minimal and integrated. Add micro-interactions on nav items (scale transform, background sweep on hover). Add a decorative element - like a diagonal accent stripe or geometric shape overlapping sidebar/content boundary. Keep all navigation items and mobile Sheet functionality intact.",
+    "STEP 4 - Dashboard Page Redesign (src/app/(dashboard)/page.tsx): Redesign the metric cards section with asymmetric layout - not a boring 4-equal-column grid. Use varied card sizes (one large hero card, others arranged around it), or use a bento-grid style with different heights. Add staggered CSS animation on page load (each card appears with a slight delay). Give cards dramatic styling: frosted glass effect (backdrop-blur + semi-transparent bg), or bold colored borders with gradient accents, or overlapping/offset shadows. Add decorative elements to the cards (geometric shapes, gradient accent bars, icon backgrounds with low opacity). Redesign the activity lists section with generous spacing, better visual hierarchy. Add a subtle atmospheric background to the page (gradient mesh, geometric pattern, or grain overlay). Keep all Prisma data fetching and display logic exactly as-is.",
+    "STEP 5 - Add wrapper animation component: Create a small client component src/components/ui/stagger-reveal.tsx that wraps children with staggered CSS animation classes (using animation-delay CSS variables). Use this in the dashboard page for the metric cards entrance animation."
+  ],
+  "acceptance_criteria": [
+    "Inter font is completely removed and replaced with distinctive, non-generic fonts",
+    "Color palette uses CSS variables with a bold, cohesive theme - not generic black/white/gray",
+    "CSS animations are present for page load reveals and micro-interactions on hover",
+    "Dashboard layout sidebar has visual personality - textures, decorative elements, or unexpected styling",
+    "Metric cards use asymmetric/bento layout, not a plain 4-equal-column grid",
+    "Cards have visual depth - shadows, gradients, frosted glass, or decorative accents",
+    "Page has atmospheric background - gradient, texture, pattern, or layered elements",
+    "All existing functionality preserved: navigation items, mobile menu, Prisma data queries, metric display, conversation list, follow-up list",
+    "All UI labels remain in Indonesian",
+    "npm run lint passes after changes"
+  ],
+  "verification": [
+    "Run npm run lint in /projects/sandbox/Si-Admin and confirm it passes",
+    "Verify no TypeScript errors by checking that npx tsc --noEmit passes (or document Prisma-related type errors as pre-existing)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
