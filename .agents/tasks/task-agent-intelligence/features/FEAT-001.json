@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Extend Prisma schema with all new models for Knowledge Base, Agent Memory (4-tier), Learning Insights, and Knowledge Graph. Update seed file with sample data. Add new sidebar navigation item.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add the following new models to prisma/schema.prisma: KnowledgeEntry (id, title, content, category enum as String: CHAT_HISTORY/FAQ/PRODUCT_INFO/SOP/RESPONSE_TEMPLATE/TONE_GUIDELINE, tags String?, source String?, isActive Boolean, createdAt, updatedAt), AgentMemory (id, tier: WORKING/EPISODIC/SEMANTIC/PROCEDURAL, content, context String?, strength Float default 1.0, accessCount Int default 0, lastAccessedAt, decayFactor Float, metadata String? for JSON, createdAt, updatedAt), LearningInsight (id, type: PATTERN/IMPROVEMENT/SUGGESTION/CORRECTION, content, source String?, confidence Float, applied Boolean default false, appliedAt DateTime?, impact String?, createdAt), KnowledgeGraphEntity (id, name, type: CUSTOMER/PRODUCT/ISSUE/SOLUTION/TOPIC, properties String? for JSON, createdAt, updatedAt), KnowledgeGraphRelation (id, fromEntityId -> KnowledgeGraphEntity, toEntityId -> KnowledgeGraphEntity, relationType String, weight Float default 1.0, metadata String?, createdAt)",
     "Update prisma/seed.ts to add sample data for: 5-8 KnowledgeEntry items covering different categories (sample chat history, FAQ items, product info, SOP for response handling, tone guidelines), 3-4 AgentMemory entries across different tiers, 2-3 LearningInsight entries, and 5-6 KnowledgeGraphEntity with 4-5 KnowledgeGraphRelation entries between them",
@@ -21,5 +21,5 @@
     "Run: npm run build - should compile without TypeScript errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All Prisma commands (generate, db push, db seed) pass successfully. npm run build completes without errors. npm run lint fails with 'Invalid project directory' which appears to be a pre-existing configuration issue (no eslint/lint directory configured). The SQLite database dev.db is updated in place by prisma db push."
 }
