@@ -145,3 +145,68 @@ model FeedbackTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/// category field uses: "CHAT_HISTORY" | "FAQ" | "PRODUCT_INFO" | "SOP" | "RESPONSE_TEMPLATE" | "TONE_GUIDELINE"
+model KnowledgeEntry {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String
+  tags      String?
+  source    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// tier field uses: "WORKING" | "EPISODIC" | "SEMANTIC" | "PROCEDURAL"
+model AgentMemory {
+  id             String   @id @default(cuid())
+  tier           String
+  content        String
+  context        String?
+  strength       Float    @default(1.0)
+  accessCount    Int      @default(0)
+  lastAccessedAt DateTime @default(now())
+  decayFactor    Float    @default(1.0)
+  metadata       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+/// type field uses: "PATTERN" | "IMPROVEMENT" | "SUGGESTION" | "CORRECTION"
+model LearningInsight {
+  id         String    @id @default(cuid())
+  type       String
+  content    String
+  source     String?
+  confidence Float     @default(0.5)
+  applied    Boolean   @default(false)
+  appliedAt  DateTime?
+  impact     String?
+  createdAt  DateTime  @default(now())
+}
+
+/// type field uses: "CUSTOMER" | "PRODUCT" | "ISSUE" | "SOLUTION" | "TOPIC"
+model KnowledgeGraphEntity {
+  id            String                   @id @default(cuid())
+  name          String
+  type          String
+  properties    String?
+  fromRelations KnowledgeGraphRelation[] @relation("FromEntity")
+  toRelations   KnowledgeGraphRelation[] @relation("ToEntity")
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+}
+
+model KnowledgeGraphRelation {
+  id           String               @id @default(cuid())
+  fromEntityId String
+  fromEntity   KnowledgeGraphEntity @relation("FromEntity", fields: [fromEntityId], references: [id])
+  toEntityId   String
+  toEntity     KnowledgeGraphEntity @relation("ToEntity", fields: [toEntityId], references: [id])
+  relationType String
+  weight       Float                @default(1.0)
+  metadata     String?
+  createdAt    DateTime             @default(now())
+}

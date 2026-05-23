@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement the Knowledge Base (Basis Pengetahuan) page with full CRUD functionality for training data management. Includes API routes and UI components for inputting, editing, categorizing, and previewing knowledge entries.",
+  "status": "completed",
+  "steps": [
+    "Create API routes at src/app/api/knowledge/route.ts with GET (list with search, filter by category, pagination) and POST (create new entry) handlers following the pattern in src/app/api/stok/route.ts",
+    "Create API route at src/app/api/knowledge/[id]/route.ts with GET (single entry), PUT (update), and DELETE handlers",
+    "Create API route at src/app/api/knowledge/test/route.ts with POST handler that accepts a test question/scenario and returns a simulated agent response based on matching knowledge entries (simple keyword matching for now)",
+    "Create the main page at src/app/(dashboard)/pengetahuan/page.tsx as a server component that fetches knowledge entries and renders the page with tabs for different categories (Semua, Riwayat Chat, FAQ, Info Produk, SOP, Template Respons, Panduan Nada)",
+    "Create component src/app/(dashboard)/pengetahuan/components/KnowledgeList.tsx - client component displaying a searchable, filterable table/card list of knowledge entries with actions (edit, delete, toggle active)",
+    "Create component src/app/(dashboard)/pengetahuan/components/KnowledgeForm.tsx - client component with a dialog/form for creating and editing knowledge entries. Fields: title, content (textarea), category (select), tags (comma-separated input), source (optional)",
+    "Create component src/app/(dashboard)/pengetahuan/components/KnowledgePreview.tsx - client component with a test panel where admin can type a customer question and see how the agent would respond based on knowledge. Shows which knowledge entries were matched.",
+    "Create component src/app/(dashboard)/pengetahuan/components/KnowledgeStats.tsx - small stats cards showing total entries per category, active vs inactive count",
+    "Create component src/app/(dashboard)/pengetahuan/components/BulkImport.tsx - client component with a textarea for pasting bulk chat history or data with a simple parser that creates multiple entries at once"
+  ],
+  "acceptance_criteria": [
+    "Navigating to /pengetahuan shows the knowledge base page with category tabs",
+    "Admin can create a new knowledge entry with title, content, category, tags, and source",
+    "Admin can edit an existing knowledge entry inline or via dialog",
+    "Admin can delete a knowledge entry with confirmation",
+    "Admin can toggle knowledge entries active/inactive",
+    "Admin can filter by category and search by title/content",
+    "Admin can test the agent by typing a question and seeing a simulated response with matched knowledge entries",
+    "Admin can paste bulk chat history text and import it as multiple entries",
+    "All API routes return proper error responses for invalid data",
+    "npm run build completes successfully"
+  ],
+  "verification": [
+    "Run: npm run build - should compile without TypeScript errors",
+    "Run: npm run lint - should pass or show only pre-existing warnings"
+  ],
+  "blocked_reason": null,
+  "findings": "All API routes (GET/POST /api/knowledge, GET/PUT/DELETE /api/knowledge/[id], POST /api/knowledge/test) implemented following src/app/api/stok/route.ts pattern. Page uses client component approach (like stok page) with Tabs for category filtering. npm run build passes successfully. npm run lint has pre-existing config issue (same as FEAT-001). The page is a client component for interactivity (tabs + state management). Next.js 16 uses Promise-based params in dynamic route handlers."
+}
