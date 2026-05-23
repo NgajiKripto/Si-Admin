@@ -18,33 +18,33 @@ export default function KnowledgeStats() {
   });
 
   useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/knowledge?limit=1000");
+        if (res.ok) {
+          const data = await res.json();
+          const items = data.items || [];
+          const categories: Record<string, number> = {};
+          let active = 0;
+
+          for (const item of items) {
+            categories[item.category] = (categories[item.category] || 0) + 1;
+            if (item.isActive) active++;
+          }
+
+          setStats({
+            total: data.total || items.length,
+            active,
+            categories,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    }
+
     fetchStats();
   }, []);
-
-  async function fetchStats() {
-    try {
-      const res = await fetch("/api/knowledge?limit=1000");
-      if (res.ok) {
-        const data = await res.json();
-        const items = data.items || [];
-        const categories: Record<string, number> = {};
-        let active = 0;
-
-        for (const item of items) {
-          categories[item.category] = (categories[item.category] || 0) + 1;
-          if (item.isActive) active++;
-        }
-
-        setStats({
-          total: data.total || items.length,
-          active,
-          categories,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

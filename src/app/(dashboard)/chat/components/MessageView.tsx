@@ -22,18 +22,6 @@ export default function MessageView({ conversationId }: MessageViewProps) {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (conversationId) {
-      fetchMessages();
-    } else {
-      setMessages([]);
-    }
-  }, [conversationId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   function scrollToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }
@@ -53,6 +41,19 @@ export default function MessageView({ conversationId }: MessageViewProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (conversationId) {
+      fetchMessages();
+    } else {
+      setMessages([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   function formatTime(dateStr: string) {
     return new Date(dateStr).toLocaleTimeString("id-ID", {
