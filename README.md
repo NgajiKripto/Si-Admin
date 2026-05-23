@@ -6,9 +6,9 @@
 
 **Dashboard admin all-in-one dengan kecerdasan buatan untuk mengelola customer service secara profesional dan optimal.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
@@ -318,7 +318,7 @@ Sistem self-improvement Si-Admin bekerja dalam loop berkelanjutan:
 | [TypeScript](https://www.typescriptlang.org/) | Type safety dan developer experience |
 | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS framework |
 | [shadcn/ui](https://ui.shadcn.com/) | Komponen UI yang accessible dan customizable |
-| [Prisma 5](https://www.prisma.io/) | ORM modern dengan type-safe database queries |
+| [Prisma 7](https://www.prisma.io/) | ORM modern dengan type-safe database queries dan schema-driven workflow |
 | [SQLite](https://www.sqlite.org/) | Database ringan tanpa konfigurasi server |
 | [Lucide React](https://lucide.dev/) | Icon library modern dan konsisten |
 
