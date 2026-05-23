@@ -22,14 +22,8 @@ async function getDashboardData() {
   ] = await Promise.all([
     prisma.conversation.count({ where: { status: "ACTIVE" } }),
     prisma.followUp.count({ where: { status: "PENDING" } }),
-    prisma.stockItem.findMany({
-      where: {
-        quantity: { lte: prisma.stockItem.fields.minThreshold ? undefined : 10 },
-      },
-    }).then(() =>
-      prisma.$queryRawUnsafe<{ count: number }[]>(
-        'SELECT COUNT(*) as count FROM StockItem WHERE quantity <= minThreshold'
-      ).then((r) => Number(r[0]?.count ?? 0))
+    prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM StockItem WHERE quantity <= minThreshold`.then(
+      (r) => Number(r[0]?.count ?? 0)
     ),
     prisma.feedback.count(),
     prisma.conversation.findMany({

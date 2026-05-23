@@ -75,10 +75,16 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const { name, type, isActive, config } = body;
+    const data: Record<string, unknown> = {};
+    if (name !== undefined) data.name = name;
+    if (type !== undefined) data.type = type;
+    if (isActive !== undefined) data.isActive = isActive;
+    if (config !== undefined) data.config = config;
 
     const channel = await prisma.channel.update({
       where: { id },
-      data: body,
+      data,
     });
 
     return NextResponse.json(channel);
@@ -103,6 +109,18 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    // Check if channel has related conversations
+    const conversationCount = await prisma.conversation.count({
+      where: { channelId: id },
+    });
+
+    if (conversationCount > 0) {
+      return NextResponse.json(
+        { error: "Channel tidak dapat dihapus karena masih memiliki percakapan terkait" },
+        { status: 400 }
+      );
+    }
+
     await prisma.channel.delete({
       where: { id },
     });

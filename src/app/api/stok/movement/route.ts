@@ -35,23 +35,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const movement = await prisma.stockMovement.create({
-      data: {
-        stockItemId,
-        type,
-        quantity: parseInt(quantity),
-        notes: notes || null,
-      },
-    });
+    const parsedQuantity = parseInt(quantity);
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      return NextResponse.json(
+        { error: "Quantity harus berupa bilangan bulat positif" },
+        { status: 400 }
+      );
+    }
 
-    // Update stock item quantity
-    const quantityChange = type === "IN" ? parseInt(quantity) : -parseInt(quantity);
-    await prisma.stockItem.update({
-      where: { id: stockItemId },
-      data: {
-        quantity: { increment: quantityChange },
-        ...(type === "IN" ? { lastRestocked: new Date() } : {}),
-      },
+    // For OUT movements, check sufficient stock before proceeding
+    if (type === "OUT") {
+      const currentItem = await prisma.stockItem.findUnique({
+        where: { id: stockItemId },
+        select: { quantity: true },
+      });
+
+      if (!currentItem) {
+        return NextResponse.json(
+          { error: "Item stok tidak ditemukan" },
+          { status: 404 }
+        );
+      }
+
+      if (currentItem.quantity < parsedQuantity) {
+        return NextResponse.json(
+          { error: "Stok tidak mencukupi" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Wrap movement creation and quantity update in a transaction
+    const quantityChange = type === "IN" ? parsedQuantity : -parsedQuantity;
+    const movement = await prisma.$transaction(async (tx) => {
+      const newMovement = await tx.stockMovement.create({
+        data: {
+          stockItemId,
+          type,
+          quantity: parsedQuantity,
+          notes: notes || null,
+        },
+      });
+
+      await tx.stockItem.update({
+        where: { id: stockItemId },
+        data: {
+          quantity: { increment: quantityChange },
+          ...(type === "IN" ? { lastRestocked: new Date() } : {}),
+        },
+      });
+
+      return newMovement;
     });
 
     return NextResponse.json(movement, { status: 201 });

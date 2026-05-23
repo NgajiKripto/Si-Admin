@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Address semantic review issues: stock movement transaction safety, PATCH body whitelisting, channel deletion cascade check, dashboard $queryRawUnsafe replacement, auth TODO comment, and input validation.",
+  "status": "in_progress",
+  "steps": [
+    "Wrap stock movement creation and quantity update in prisma.$transaction, add insufficient stock check for OUT movements",
+    "Whitelist allowed fields in PATCH /api/stok/[id], PATCH /api/pengaturan/channels, PATCH /api/pengaturan/categories",
+    "Add cascade check before channel deletion",
+    "Replace $queryRawUnsafe with proper Prisma query in dashboard page, remove dead code",
+    "Add auth TODO comment in dashboard layout",
+    "Add basic input validation to chat POST and stock movement POST"
+  ],
+  "acceptance_criteria": [
+    "Stock movement uses prisma.$transaction and rejects OUT movements with insufficient quantity",
+    "PATCH endpoints only accept whitelisted fields",
+    "Channel deletion checks for related conversations first",
+    "Dashboard uses $queryRaw tagged template or Prisma query instead of $queryRawUnsafe",
+    "Dashboard layout has auth TODO comment",
+    "Chat POST validates message content length, stock movement validates positive integer quantity",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

@@ -9,10 +9,19 @@ export async function PATCH(
 
   try {
     const body = await request.json();
+    const { name, sku, categoryId, quantity, minThreshold, unit, price } = body;
+    const data: Record<string, unknown> = {};
+    if (name !== undefined) data.name = name;
+    if (sku !== undefined) data.sku = sku;
+    if (categoryId !== undefined) data.categoryId = categoryId;
+    if (quantity !== undefined) data.quantity = quantity;
+    if (minThreshold !== undefined) data.minThreshold = minThreshold;
+    if (unit !== undefined) data.unit = unit;
+    if (price !== undefined) data.price = price;
 
     const item = await prisma.stockItem.update({
       where: { id },
-      data: body,
+      data,
       include: {
         category: true,
       },

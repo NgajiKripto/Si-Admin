@@ -51,6 +51,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof content !== "string" || content.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Content tidak boleh kosong" },
+        { status: 400 }
+      );
+    }
+
+    if (content.length > 5000) {
+      return NextResponse.json(
+        { error: "Content tidak boleh melebihi 5000 karakter" },
+        { status: 400 }
+      );
+    }
+
     const message = await prisma.message.create({
       data: {
         conversationId,

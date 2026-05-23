@@ -79,10 +79,14 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const { name, description } = body;
+    const data: Record<string, unknown> = {};
+    if (name !== undefined) data.name = name;
+    if (description !== undefined) data.description = description;
 
     const category = await prisma.stockCategory.update({
       where: { id },
-      data: body,
+      data,
     });
 
     return NextResponse.json(category);
