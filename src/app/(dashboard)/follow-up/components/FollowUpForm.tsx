@@ -54,21 +54,6 @@ export default function FollowUpForm({
   const [priority, setPriority] = useState("MEDIUM");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      fetchCustomers();
-      if (editData) {
-        setCustomerId(editData.customerId);
-        setTitle(editData.title);
-        setDescription(editData.description || "");
-        setDueDate(editData.dueDate ? editData.dueDate.split("T")[0] : "");
-        setPriority(editData.priority);
-      } else {
-        resetForm();
-      }
-    }
-  }, [open, editData]);
-
   function resetForm() {
     setCustomerId("");
     setTitle("");
@@ -88,6 +73,21 @@ export default function FollowUpForm({
       console.error("Error fetching customers:", error);
     }
   }
+
+  useEffect(() => {
+    if (open) {
+      fetchCustomers();
+      if (editData) {
+        setCustomerId(editData.customerId);
+        setTitle(editData.title);
+        setDescription(editData.description || "");
+        setDueDate(editData.dueDate ? editData.dueDate.split("T")[0] : "");
+        setPriority(editData.priority);
+      } else {
+        resetForm();
+      }
+    }
+  }, [open, editData]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
