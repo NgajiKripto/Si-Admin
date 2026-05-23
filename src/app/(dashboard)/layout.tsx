@@ -28,7 +28,7 @@ const navItems = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/follow-up", label: "Follow Up", icon: CalendarClock },
   { href: "/feedback", label: "Feedback", icon: Star },
-  { href: "/stok-barang", label: "Stok Barang", icon: Package },
+  { href: "/stok", label: "Stok Barang", icon: Package },
   { href: "/pengaturan", label: "Pengaturan", icon: Settings },
 ];
 
