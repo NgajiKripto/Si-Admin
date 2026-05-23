@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the Knowledge Base (Basis Pengetahuan) page with full CRUD functionality for training data management. Includes API routes and UI components for inputting, editing, categorizing, and previewing knowledge entries.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create API routes at src/app/api/knowledge/route.ts with GET (list with search, filter by category, pagination) and POST (create new entry) handlers following the pattern in src/app/api/stok/route.ts",
     "Create API route at src/app/api/knowledge/[id]/route.ts with GET (single entry), PUT (update), and DELETE handlers",
