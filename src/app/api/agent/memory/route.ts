@@ -48,6 +48,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (content.length > 50000) {
+      return NextResponse.json(
+        { error: "content maksimal 50000 karakter" },
+        { status: 400 }
+      );
+    }
+
+    if (metadata && metadata.length > 10000) {
+      return NextResponse.json(
+        { error: "metadata maksimal 10000 karakter" },
+        { status: 400 }
+      );
+    }
+
     const validTiers = ["WORKING", "EPISODIC", "SEMANTIC", "PROCEDURAL"];
     if (!validTiers.includes(tier)) {
       return NextResponse.json(

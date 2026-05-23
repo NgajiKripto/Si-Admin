@@ -20,9 +20,19 @@ export async function POST(request: NextRequest) {
       .split(/\s+/)
       .filter((word) => word.length > 2);
 
-    // Fetch all active knowledge entries
+    // Pre-filter at DB level with keyword matching, limit to 100
+    const orConditions = keywords.flatMap((keyword) => [
+      { title: { contains: keyword } },
+      { content: { contains: keyword } },
+      { tags: { contains: keyword } },
+    ]);
+
     const entries = await prisma.knowledgeEntry.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(orConditions.length > 0 ? { OR: orConditions } : {}),
+      },
+      take: 100,
     });
 
     // Score entries by keyword match relevance

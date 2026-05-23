@@ -53,10 +53,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    // Fetch all active knowledge entries and memories
+    // Pre-filter at DB level with keyword matching, limit to 100 each
+    const knowledgeOrConditions = keywords.flatMap((keyword) => [
+      { title: { contains: keyword } },
+      { content: { contains: keyword } },
+    ]);
+
+    const memoryOrConditions = keywords.flatMap((keyword) => [
+      { content: { contains: keyword } },
+      { context: { contains: keyword } },
+    ]);
+
     const [knowledgeEntries, memories] = await Promise.all([
-      prisma.knowledgeEntry.findMany({ where: { isActive: true } }),
-      prisma.agentMemory.findMany(),
+      prisma.knowledgeEntry.findMany({
+        where: {
+          isActive: true,
+          OR: knowledgeOrConditions,
+        },
+        take: 100,
+      }),
+      prisma.agentMemory.findMany({
+        where: {
+          OR: memoryOrConditions,
+        },
+        take: 100,
+      }),
     ]);
 
     const totalDocs = knowledgeEntries.length + memories.length;

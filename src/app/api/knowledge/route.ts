@@ -5,8 +5,10 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
+  const rawPage = parseInt(searchParams.get("page") || "1");
+  const rawLimit = parseInt(searchParams.get("limit") || "20");
+  const page = isNaN(rawPage) ? 1 : Math.max(1, rawPage);
+  const limit = isNaN(rawLimit) ? 20 : Math.max(1, Math.min(100, rawLimit));
   const skip = (page - 1) * limit;
 
   try {
@@ -56,6 +58,20 @@ export async function POST(request: NextRequest) {
     if (!title || !content || !category) {
       return NextResponse.json(
         { error: "title, content, dan category diperlukan" },
+        { status: 400 }
+      );
+    }
+
+    if (title.length > 500) {
+      return NextResponse.json(
+        { error: "title maksimal 500 karakter" },
+        { status: 400 }
+      );
+    }
+
+    if (content.length > 50000) {
+      return NextResponse.json(
+        { error: "content maksimal 50000 karakter" },
         { status: 400 }
       );
     }

@@ -43,6 +43,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (content.length > 50000) {
+      return NextResponse.json(
+        { error: "content maksimal 50000 karakter" },
+        { status: 400 }
+      );
+    }
+
     const validTypes = ["PATTERN", "IMPROVEMENT", "SUGGESTION", "CORRECTION"];
     if (!validTypes.includes(type)) {
       return NextResponse.json(

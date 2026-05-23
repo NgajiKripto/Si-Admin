@@ -36,12 +36,11 @@ export async function POST() {
         },
       });
 
-      // Lower strength of originals
-      await prisma.agentMemory.updateMany({
+      // Delete consumed working memories after promotion
+      await prisma.agentMemory.deleteMany({
         where: {
           id: { in: oldWorkingMemories.map((m) => m.id) },
         },
-        data: { strength: 0.3 },
       });
 
       workingToEpisodic = oldWorkingMemories.length;
@@ -73,6 +72,14 @@ export async function POST() {
           },
         });
       }
+
+      // Delete consumed episodic memories after promotion
+      await prisma.agentMemory.deleteMany({
+        where: {
+          id: { in: oldEpisodicMemories.map((m) => m.id) },
+        },
+      });
+
       episodicToSemantic = oldEpisodicMemories.length;
     }
 
@@ -85,6 +92,7 @@ export async function POST() {
     });
 
     let semanticToProcedural = 0;
+    const promotedSemanticIds: string[] = [];
     if (frequentSemanticMemories.length > 0) {
       for (const mem of frequentSemanticMemories) {
         // Check if procedural already exists for this source
@@ -110,8 +118,18 @@ export async function POST() {
               }),
             },
           });
+          promotedSemanticIds.push(mem.id);
           semanticToProcedural++;
         }
+      }
+
+      // Delete consumed semantic memories after promotion
+      if (promotedSemanticIds.length > 0) {
+        await prisma.agentMemory.deleteMany({
+          where: {
+            id: { in: promotedSemanticIds },
+          },
+        });
       }
     }
 

@@ -25,7 +25,8 @@ export async function PUT(
       where: { id },
       data: {
         ...(applied !== undefined ? { applied } : {}),
-        ...(applied ? { appliedAt: new Date() } : {}),
+        ...(applied === true ? { appliedAt: new Date() } : {}),
+        ...(applied === false ? { appliedAt: null } : {}),
         ...(impact !== undefined ? { impact } : {}),
       },
     });

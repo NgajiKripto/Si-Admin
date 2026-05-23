@@ -66,30 +66,32 @@ export default function BulkImport({
     if (blocks.length === 0) return;
 
     setLoading(true);
-    let successCount = 0;
 
     try {
-      for (const block of blocks) {
-        // Use first line as title, rest as content
+      const entries = blocks.map((block) => {
         const lines = block.split("\n");
         const title = lines[0].substring(0, 100);
-        const content = block;
+        return { title, content: block, category };
+      });
 
-        const res = await fetch("/api/knowledge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content, category }),
-        });
+      const res = await fetch("/api/knowledge/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
 
-        if (res.ok) successCount++;
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Berhasil mengimpor ${data.created} entri`);
+        setText("");
+        setCategory("");
+        setPreview([]);
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        const data = await res.json();
+        alert(`Gagal mengimpor: ${data.error || "Terjadi kesalahan"}`);
       }
-
-      alert(`Berhasil mengimpor ${successCount} dari ${blocks.length} entri`);
-      setText("");
-      setCategory("");
-      setPreview([]);
-      onSuccess();
-      onOpenChange(false);
     } catch (error) {
       console.error("Error importing:", error);
       alert("Gagal mengimpor data");
