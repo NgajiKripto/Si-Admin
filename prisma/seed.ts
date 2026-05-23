@@ -3,6 +3,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Clean up new models first
+  await prisma.knowledgeGraphRelation.deleteMany();
+  await prisma.knowledgeGraphEntity.deleteMany();
+  await prisma.learningInsight.deleteMany();
+  await prisma.agentMemory.deleteMany();
+  await prisma.knowledgeEntry.deleteMany();
+
   // Clean up existing data
   await prisma.stockMovement.deleteMany();
   await prisma.stockItem.deleteMany();
@@ -243,6 +250,259 @@ async function main() {
       { name: "Template Produk", content: "Bagaimana kualitas produk {nama_produk} yang Anda beli? Kami tunggu feedback Anda!", category: "Produk" },
       { name: "Template Layanan", content: "Apakah tim kami sudah membantu menyelesaikan masalah Anda? Beri kami masukan.", category: "Layanan" },
       { name: "Template Rekomendasi", content: "Apakah Anda akan merekomendasikan {nama_toko} ke teman? Beri tahu kami alasannya!", category: "Rekomendasi" },
+    ],
+  });
+
+  // Create Knowledge Entries
+  await prisma.knowledgeEntry.createMany({
+    data: [
+      {
+        title: "Riwayat Chat - Komplain Pengiriman",
+        content: "Pelanggan Budi mengeluhkan keterlambatan pengiriman 3 hari. Diselesaikan dengan memberikan voucher diskon 10% untuk pembelian berikutnya.",
+        category: "CHAT_HISTORY",
+        tags: "komplain,pengiriman,voucher",
+        source: "conversation-log",
+        isActive: true,
+      },
+      {
+        title: "FAQ - Cara Melacak Pesanan",
+        content: "Pelanggan dapat melacak pesanan melalui link yang dikirim via WhatsApp setelah pengiriman. Nomor resi juga tersedia di halaman pesanan.",
+        category: "FAQ",
+        tags: "tracking,pengiriman,resi",
+        source: "knowledge-base",
+        isActive: true,
+      },
+      {
+        title: "FAQ - Kebijakan Pengembalian",
+        content: "Pengembalian barang dapat dilakukan dalam 7 hari setelah penerimaan. Barang harus dalam kondisi asli dan disertai bukti pembelian.",
+        category: "FAQ",
+        tags: "retur,pengembalian,kebijakan",
+        source: "knowledge-base",
+        isActive: true,
+      },
+      {
+        title: "Info Produk - Charger USB-C Fast Charging",
+        content: "Charger USB-C 20W mendukung fast charging untuk iPhone 12+ dan Samsung S21+. Garansi 6 bulan. Tersedia warna hitam dan putih.",
+        category: "PRODUCT_INFO",
+        tags: "charger,usb-c,elektronik",
+        source: "product-catalog",
+        isActive: true,
+      },
+      {
+        title: "SOP - Penanganan Komplain Pelanggan",
+        content: "1. Dengarkan keluhan pelanggan dengan sabar. 2. Minta maaf atas ketidaknyamanan. 3. Identifikasi masalah utama. 4. Tawarkan solusi (refund/penggantian/voucher). 5. Follow up dalam 24 jam.",
+        category: "SOP",
+        tags: "komplain,prosedur,penanganan",
+        source: "internal-doc",
+        isActive: true,
+      },
+      {
+        title: "Template Respon - Ucapan Selamat Datang",
+        content: "Halo {nama}! Selamat datang di Toko Serba Ada. Ada yang bisa kami bantu hari ini? Kami siap melayani Anda dengan senang hati.",
+        category: "RESPONSE_TEMPLATE",
+        tags: "greeting,welcome,template",
+        source: "template-library",
+        isActive: true,
+      },
+      {
+        title: "Template Respon - Konfirmasi Pesanan",
+        content: "Terima kasih {nama}! Pesanan Anda #{nomor_pesanan} sudah kami terima dan sedang diproses. Estimasi pengiriman 2-3 hari kerja.",
+        category: "RESPONSE_TEMPLATE",
+        tags: "konfirmasi,pesanan,template",
+        source: "template-library",
+        isActive: true,
+      },
+      {
+        title: "Panduan Tone - Komunikasi dengan Pelanggan",
+        content: "Gunakan bahasa yang ramah dan profesional. Hindari bahasa terlalu formal. Gunakan emoji secukupnya. Selalu sebut nama pelanggan. Akhiri dengan pertanyaan apakah ada yang bisa dibantu lagi.",
+        category: "TONE_GUIDELINE",
+        tags: "tone,komunikasi,panduan",
+        source: "brand-guide",
+        isActive: true,
+      },
+    ],
+  });
+
+  // Create Agent Memory entries
+  await prisma.agentMemory.createMany({
+    data: [
+      {
+        tier: "WORKING",
+        content: "Sedang menangani percakapan dengan Budi tentang status pengiriman pesanan #12345",
+        context: "active-conversation",
+        strength: 1.0,
+        accessCount: 5,
+        decayFactor: 0.9,
+        metadata: JSON.stringify({ conversationId: "conv-001", customerId: "budi" }),
+      },
+      {
+        tier: "WORKING",
+        content: "Pelanggan Siti bertanya tentang ketersediaan Power Bank 10000mAh warna putih",
+        context: "active-conversation",
+        strength: 0.9,
+        accessCount: 3,
+        decayFactor: 0.9,
+        metadata: JSON.stringify({ conversationId: "conv-002", customerId: "siti" }),
+      },
+      {
+        tier: "EPISODIC",
+        content: "Minggu lalu ada lonjakan komplain pengiriman karena ekspedisi partner mengalami keterlambatan. Masalah sudah diselesaikan dengan switch ke ekspedisi cadangan.",
+        context: "incident-summary",
+        strength: 0.7,
+        accessCount: 8,
+        decayFactor: 0.95,
+        metadata: JSON.stringify({ week: "2024-W50", type: "incident" }),
+      },
+      {
+        tier: "SEMANTIC",
+        content: "Pelanggan yang membeli charger USB-C sering juga membeli kabel data dan case HP. Rata-rata nilai transaksi bundling Rp 150.000.",
+        context: "product-knowledge",
+        strength: 0.85,
+        accessCount: 15,
+        decayFactor: 0.98,
+        metadata: JSON.stringify({ category: "cross-sell", confidence: 0.85 }),
+      },
+      {
+        tier: "PROCEDURAL",
+        content: "Ketika pelanggan komplain tentang barang rusak: 1) Minta foto bukti, 2) Verifikasi dengan data pesanan, 3) Tawarkan penggantian atau refund, 4) Proses dalam 1x24 jam",
+        context: "complaint-handling",
+        strength: 0.95,
+        accessCount: 25,
+        decayFactor: 0.99,
+        metadata: JSON.stringify({ type: "procedure", domain: "complaint" }),
+      },
+    ],
+  });
+
+  // Create Learning Insights
+  await prisma.learningInsight.createMany({
+    data: [
+      {
+        type: "PATTERN",
+        content: "Pelanggan yang menghubungi antara jam 19:00-21:00 cenderung memiliki waktu respons yang lebih lama. Disarankan prioritaskan chat di jam tersebut.",
+        source: "conversation-analysis",
+        confidence: 0.78,
+        applied: true,
+        appliedAt: new Date(Date.now() - 3 * 86400000),
+        impact: "Waktu respons rata-rata turun 15% di jam sibuk",
+      },
+      {
+        type: "IMPROVEMENT",
+        content: "Menambahkan link tracking otomatis di pesan konfirmasi pengiriman dapat mengurangi pertanyaan 'dimana pesanan saya' sebesar 40%.",
+        source: "feedback-analysis",
+        confidence: 0.82,
+        applied: false,
+        appliedAt: null,
+        impact: null,
+      },
+      {
+        type: "SUGGESTION",
+        content: "Berdasarkan pola pembelian, pelanggan yang membeli produk elektronik sering kembali dalam 2 minggu untuk aksesoris. Pertimbangkan follow-up otomatis.",
+        source: "purchase-pattern",
+        confidence: 0.65,
+        applied: false,
+        appliedAt: null,
+        impact: null,
+      },
+      {
+        type: "CORRECTION",
+        content: "Respons template untuk komplain pengiriman sebelumnya terlalu formal. Admin mengubah tone menjadi lebih empati dan personal.",
+        source: "admin-feedback",
+        confidence: 0.9,
+        applied: true,
+        appliedAt: new Date(Date.now() - 7 * 86400000),
+        impact: "Rating kepuasan pelanggan naik dari 3.5 ke 4.2 untuk kasus komplain",
+      },
+    ],
+  });
+
+  // Create Knowledge Graph Entities
+  const entityBudi = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Budi Santoso",
+      type: "CUSTOMER",
+      properties: JSON.stringify({ segment: "loyal", totalOrders: 15, avgOrderValue: 200000 }),
+    },
+  });
+
+  const entityCharger = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Charger USB-C",
+      type: "PRODUCT",
+      properties: JSON.stringify({ sku: "ELK-001", price: 75000, category: "Elektronik" }),
+    },
+  });
+
+  const entityPengiriman = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Keterlambatan Pengiriman",
+      type: "ISSUE",
+      properties: JSON.stringify({ frequency: "medium", avgResolutionTime: "24h" }),
+    },
+  });
+
+  const entityVoucher = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Voucher Diskon 10%",
+      type: "SOLUTION",
+      properties: JSON.stringify({ type: "compensation", validDays: 30 }),
+    },
+  });
+
+  const entityElektronik = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Elektronik & Gadget",
+      type: "TOPIC",
+      properties: JSON.stringify({ productCount: 5, popularItems: ["charger", "powerbank", "tws"] }),
+    },
+  });
+
+  const entityKabelData = await prisma.knowledgeGraphEntity.create({
+    data: {
+      name: "Kabel Data Lightning",
+      type: "PRODUCT",
+      properties: JSON.stringify({ sku: "ELK-002", price: 50000, category: "Elektronik" }),
+    },
+  });
+
+  // Create Knowledge Graph Relations
+  await prisma.knowledgeGraphRelation.createMany({
+    data: [
+      {
+        fromEntityId: entityBudi.id,
+        toEntityId: entityCharger.id,
+        relationType: "PURCHASED",
+        weight: 0.9,
+        metadata: JSON.stringify({ lastPurchase: "2024-12-01", quantity: 2 }),
+      },
+      {
+        fromEntityId: entityBudi.id,
+        toEntityId: entityPengiriman.id,
+        relationType: "REPORTED",
+        weight: 0.7,
+        metadata: JSON.stringify({ date: "2024-12-10", resolved: true }),
+      },
+      {
+        fromEntityId: entityPengiriman.id,
+        toEntityId: entityVoucher.id,
+        relationType: "RESOLVED_BY",
+        weight: 0.85,
+        metadata: JSON.stringify({ successRate: 0.8 }),
+      },
+      {
+        fromEntityId: entityCharger.id,
+        toEntityId: entityElektronik.id,
+        relationType: "BELONGS_TO",
+        weight: 1.0,
+        metadata: null,
+      },
+      {
+        fromEntityId: entityCharger.id,
+        toEntityId: entityKabelData.id,
+        relationType: "FREQUENTLY_BOUGHT_WITH",
+        weight: 0.75,
+        metadata: JSON.stringify({ coOccurrence: 0.6 }),
+      },
     ],
   });
 

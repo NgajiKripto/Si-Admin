@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement the Agent Intelligence (Kecerdasan Agent) page with 4-tier memory system visualization, self-improvement loop tracking, knowledge graph viewer, hybrid search, and agent health dashboard. Includes all supporting API routes.",
+  "status": "pending",
+  "steps": [
+    "Create API routes at src/app/api/agent/memory/route.ts - GET (list memories with filter by tier, search) and POST (create memory entry). Include a consolidation endpoint at src/app/api/agent/memory/consolidate/route.ts that simulates memory consolidation (moves old working memories to episodic, etc.)",
+    "Create API routes at src/app/api/agent/learning/route.ts - GET (list insights with filter by type, applied status) and POST (create insight). Include PUT at src/app/api/agent/learning/[id]/route.ts for marking insights as applied.",
+    "Create API routes at src/app/api/agent/graph/route.ts - GET (list entities with relations) and POST (create entity). src/app/api/agent/graph/relations/route.ts for POST (create relation between entities). Include a visualization-friendly format that returns nodes and edges.",
+    "Create API route at src/app/api/agent/search/route.ts - POST handler that implements hybrid search across knowledge entries and memories using BM25-style keyword scoring combined with simple text similarity. Returns ranked results with relevance scores.",
+    "Create API route at src/app/api/agent/health/route.ts - GET handler returning agent health metrics: total memories per tier, knowledge coverage (entries per category), learning insights count, average confidence scores, recent activity timestamps, response quality estimate.",
+    "Create the main page at src/app/(dashboard)/kecerdasan/page.tsx as a server component with tab-based layout: Memori, Pembelajaran, Graf Pengetahuan, Pencarian, Kesehatan",
+    "Create component src/app/(dashboard)/kecerdasan/components/MemoryPanel.tsx - visualization of 4-tier memory with cards showing Working (real-time), Episodic (summaries), Semantic (facts), Procedural (patterns). Each tier shows count, recent entries, and has a consolidation trigger button.",
+    "Create component src/app/(dashboard)/kecerdasan/components/LearningPanel.tsx - shows self-improvement insights: patterns discovered, suggested improvements, corrections from admin, confidence trend. Admin can approve/apply suggestions.",
+    "Create component src/app/(dashboard)/kecerdasan/components/KnowledgeGraphPanel.tsx - simple visual representation of entity relationships using cards/badges showing entities as nodes and relations as connecting labels. Filter by entity type.",
+    "Create component src/app/(dashboard)/kecerdasan/components/HybridSearchPanel.tsx - search interface that queries across all knowledge and memory. Shows results with relevance scores, source tier/category badges, and highlights matching terms.",
+    "Create component src/app/(dashboard)/kecerdasan/components/HealthDashboard.tsx - overview cards with metrics: Memory Health (entries per tier with progress bars), Knowledge Coverage (radar/bar chart showing coverage per category), Learning Progress (insights applied vs pending), Response Quality (estimated score based on feedback ratings), System Activity (last consolidation, last learning cycle timestamps)."
+  ],
+  "acceptance_criteria": [
+    "Navigating to /kecerdasan shows the Agent Intelligence page with 5 tabs",
+    "Memory tab shows 4-tier visualization with real data from AgentMemory table",
+    "Admin can trigger memory consolidation which processes working memories into higher tiers",
+    "Learning tab shows insights and allows admin to approve/apply suggestions",
+    "Knowledge Graph tab displays entities and their relationships visually",
+    "Hybrid Search performs search across knowledge base and memory, returns scored results",
+    "Health Dashboard shows accurate metrics calculated from actual database data",
+    "All API routes handle errors gracefully and return proper status codes",
+    "npm run build completes successfully"
+  ],
+  "verification": [
+    "Run: npm run build - should compile without TypeScript errors",
+    "Run: npm run lint - should pass or show only pre-existing warnings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

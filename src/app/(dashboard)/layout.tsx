@@ -12,6 +12,8 @@ import {
   Package,
   Settings,
   Menu,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +32,8 @@ const navItems = [
   { href: "/follow-up", label: "Follow Up", icon: CalendarClock },
   { href: "/feedback", label: "Feedback", icon: Star },
   { href: "/stok", label: "Stok Barang", icon: Package },
+  { href: "/pengetahuan", label: "Pengetahuan", icon: Brain },
+  { href: "/kecerdasan", label: "Kecerdasan Agent", icon: Sparkles },
   { href: "/pengaturan", label: "Pengaturan", icon: Settings },
 ];
 
