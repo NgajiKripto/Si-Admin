@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Implement the Agent Intelligence (Kecerdasan Agent) page with 4-tier memory system visualization, self-improvement loop tracking, knowledge graph viewer, hybrid search, and agent health dashboard. Includes all supporting API routes.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create API routes at src/app/api/agent/memory/route.ts - GET (list memories with filter by tier, search) and POST (create memory entry). Include a consolidation endpoint at src/app/api/agent/memory/consolidate/route.ts that simulates memory consolidation (moves old working memories to episodic, etc.)",
     "Create API routes at src/app/api/agent/learning/route.ts - GET (list insights with filter by type, applied status) and POST (create insight). Include PUT at src/app/api/agent/learning/[id]/route.ts for marking insights as applied.",
