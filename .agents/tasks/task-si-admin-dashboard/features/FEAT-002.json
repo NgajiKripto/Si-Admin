@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement Chat Management and Follow Up System pages. Chat page includes conversation list, message view, reply functionality, search, and multi-conversation handling. Follow Up page includes task list with status filters, scheduling form, calendar view, and automated status tracking.",
+  "status": "completed",
+  "steps": [
+    "Create src/app/(dashboard)/chat/page.tsx - Main chat management page with a split-panel layout: left panel shows conversation list (searchable, filterable by channel and status), right panel shows selected conversation messages. Include customer info header, message bubbles (different styles for admin vs customer), message input with send button, and conversation status indicators (unread count badges).",
+    "Create src/app/(dashboard)/chat/components/ConversationList.tsx - Client component with search input, channel filter dropdown, list of conversations showing customer name, last message preview, timestamp, unread badge, and channel icon. Clicking a conversation selects it.",
+    "Create src/app/(dashboard)/chat/components/MessageView.tsx - Client component showing the full message thread for selected conversation. Messages displayed as chat bubbles (admin messages right-aligned in blue, customer messages left-aligned in gray). Include timestamp for each message. Auto-scroll to bottom.",
+    "Create src/app/(dashboard)/chat/components/MessageInput.tsx - Client component with textarea for composing messages, send button, and optional template selector for quick responses.",
+    "Create src/app/api/chat/route.ts - API routes for fetching conversations (GET with search/filter params) and sending messages (POST). Use Prisma to query and create records.",
+    "Create src/app/api/chat/[conversationId]/route.ts - API route for fetching messages of a specific conversation (GET) and updating conversation status (PATCH).",
+    "Create src/app/(dashboard)/follow-up/page.tsx - Follow-up management page with: status filter tabs (Semua, Tertunda, Selesai, Terlambat), list/card view of follow-ups showing title, customer name, due date, priority indicator, and status badge. Include 'Tambah Follow Up' button opening a dialog form.",
+    "Create src/app/(dashboard)/follow-up/components/FollowUpList.tsx - Client component displaying follow-ups as cards with color-coded status (yellow=pending, green=done, red=overdue). Include actions: mark as done, edit, delete.",
+    "Create src/app/(dashboard)/follow-up/components/FollowUpForm.tsx - Dialog/form component for creating/editing follow-ups. Fields: customer (select), title, description, due date (date picker), priority (select: rendah/sedang/tinggi).",
+    "Create src/app/(dashboard)/follow-up/components/FollowUpCalendar.tsx - Calendar view component showing follow-ups on their due dates. Use the calendar component from shadcn/ui with dots/indicators on dates that have follow-ups.",
+    "Create src/app/api/follow-up/route.ts - API routes for CRUD operations on follow-ups. GET with filters, POST to create, and include logic to auto-mark overdue items.",
+    "Create src/app/api/follow-up/[id]/route.ts - API route for updating (PATCH) and deleting (DELETE) individual follow-ups.",
+    "Ensure all components use proper loading states, error handling, and optimistic UI updates where appropriate.",
+    "Verify with 'npm run build' that all pages compile correctly."
+  ],
+  "acceptance_criteria": [
+    "Chat page displays conversation list from database with search and filter functionality",
+    "Selecting a conversation shows its message history with proper chat bubble styling",
+    "New messages can be composed and sent via the message input",
+    "Follow-up page shows all follow-ups with working status filter tabs",
+    "New follow-ups can be created via the form dialog",
+    "Follow-ups can be marked as done or deleted",
+    "Calendar view shows follow-up dates",
+    "All UI text is in Bahasa Indonesia",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "shadcn/ui calendar component from v4.8.0 generates code with 'table' classNames property that is not valid in react-day-picker v10 types - removed it to fix build. Created components.json for shadcn CLI since it was missing. Added /api/customers endpoint for the FollowUpForm customer select dropdown."
+}

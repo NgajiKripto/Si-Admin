@@ -1,0 +1,47 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement Customer Feedback system, Stock/Inventory Management, Business Customization settings, and Multi-Channel configuration pages. This completes all core features of the Si-Admin dashboard.",
+  "status": "completed",
+  "steps": [
+    "Create src/app/(dashboard)/feedback/page.tsx - Feedback management page with: feedback history table (customer, content, rating, date, channel), 'Kirim Feedback' button opening a dialog, template library section. Include star rating display and filter by rating.",
+    "Create src/app/(dashboard)/feedback/components/FeedbackForm.tsx - Dialog form for sending feedback. Fields: customer (select), content (textarea with template insertion), rating (1-5 stars interactive), conversation reference (optional).",
+    "Create src/app/(dashboard)/feedback/components/FeedbackTemplates.tsx - Component showing available templates as cards. Click to select/insert into feedback form. Include add/edit/delete template functionality.",
+    "Create src/app/api/feedback/route.ts - API routes for feedback CRUD. GET with filters, POST to create feedback entry.",
+    "Create src/app/api/feedback/templates/route.ts - API routes for feedback template CRUD.",
+    "Create src/app/(dashboard)/stok/page.tsx - Stock management page with: overview cards (Total Item, Stok Rendah, Perlu Restok, Pergerakan Hari Ini), stock items table with search and category filter, low-stock alerts panel, 'Tambah Stok' and 'Terima Barang' action buttons.",
+    "Create src/app/(dashboard)/stok/components/StockTable.tsx - Table component showing all stock items with columns: nama, SKU, kategori, jumlah (with color coding: red if below threshold, yellow if near threshold), satuan, harga, terakhir restok. Include sort and search.",
+    "Create src/app/(dashboard)/stok/components/StockForm.tsx - Dialog form for adding new stock items. Fields: nama, SKU, kategori (select), jumlah awal, satuan, harga, batas minimum.",
+    "Create src/app/(dashboard)/stok/components/StockReceive.tsx - Dialog form for receiving stock (penerimaan barang). Fields: item (select), jumlah diterima, catatan. Creates a StockMovement record with type IN and updates item quantity.",
+    "Create src/app/(dashboard)/stok/components/StockMovementHistory.tsx - Table/timeline showing recent stock movements (masuk/keluar) with item name, quantity, type badge, notes, and date.",
+    "Create src/app/(dashboard)/stok/components/LowStockAlerts.tsx - Alert cards showing items below or near their minimum threshold, with suggested restock quantities.",
+    "Create src/app/api/stok/route.ts - API routes for stock items CRUD. GET with search/category filters, POST to create.",
+    "Create src/app/api/stok/[id]/route.ts - API route for individual stock item update/delete.",
+    "Create src/app/api/stok/movement/route.ts - API route for recording stock movements (both IN and OUT). Auto-updates the stock item quantity.",
+    "Create src/app/(dashboard)/pengaturan/page.tsx - Settings page with tabs: Profil Bisnis, Channel, Kustomisasi. Profil Bisnis tab: business name, type (dropdown: Retail, F&B, Jasa, Grosir, Lainnya), description, logo upload placeholder. Channel tab: list of configured channels with toggle on/off, add new channel form. Kustomisasi tab: product category management, custom fields placeholder.",
+    "Create src/app/(dashboard)/pengaturan/components/BusinessProfileForm.tsx - Form for editing business profile. Fields: nama bisnis, jenis usaha (select with options), deskripsi, pengaturan khusus.",
+    "Create src/app/(dashboard)/pengaturan/components/ChannelManager.tsx - Component showing configured channels as cards with: channel name, type icon, active/inactive toggle, configuration details, delete button. Include 'Tambah Channel' button with form for channel type, name, and config.",
+    "Create src/app/(dashboard)/pengaturan/components/CategoryManager.tsx - Component for managing stock/product categories. List with add/edit/delete functionality.",
+    "Create src/app/api/pengaturan/route.ts - API routes for business profile CRUD.",
+    "Create src/app/api/pengaturan/channels/route.ts - API routes for channel management CRUD.",
+    "Create src/app/api/pengaturan/categories/route.ts - API routes for category management CRUD.",
+    "Verify all pages compile and the full application builds: 'npm run build'."
+  ],
+  "acceptance_criteria": [
+    "Feedback page displays feedback history with ratings and allows sending new feedback",
+    "Feedback templates can be viewed, created, and used when composing feedback",
+    "Stock page shows inventory with color-coded quantity levels",
+    "Stock items can be added, received (penerimaan), and movements are tracked",
+    "Low-stock alerts display items below minimum threshold",
+    "Settings page allows editing business profile including business type",
+    "Channels can be added, toggled on/off, and removed from settings",
+    "Stock categories can be managed from settings",
+    "All UI text is in Bahasa Indonesia",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes successfully. All new routes registered: /feedback, /stok, /pengaturan plus all API routes. Updated sidebar nav from /stok-barang to /stok to match the actual page route. Installed shadcn/ui table, switch, and dropdown-menu components. Next.js 16 uses Promise-based params in dynamic route handlers."
+}
