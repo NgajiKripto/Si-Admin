@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement all 7 agent-guard enhancements: (1) Read-Only Mode config + isActionAllowed utility, (2) Action-Level Permissions module, (3) Knowledge Auditor module, (4) Zero-Width Unicode Detection in input-sanitizer, (5) Update README with Agent Guard documentation section, (6) Update Prisma schema with readOnlyMode and allowedActions fields, (7) Update API route and UI to handle new fields. All changes are ADDITIVE and must not break existing functionality.",
+  "status": "pending",
+  "steps": [
+    "Step 1 - Update prisma/schema.prisma: Add two new fields to the AgentGuardConfig model: readOnlyMode Boolean @default(false) and allowedActions String @default(\"[\\\"SEND_MESSAGE\\\",\\\"CREATE_FOLLOWUP\\\",\\\"UPDATE_STOCK\\\",\\\"RECORD_FEEDBACK\\\",\\\"SEND_FEEDBACK_TEMPLATE\\\"]\"). Then run npx prisma generate and npx prisma db push.",
+    "Step 2 - Create src/lib/agent-guard/action-permissions.ts: Define an enum/type for action types (SEND_MESSAGE, CREATE_FOLLOWUP, UPDATE_STOCK, RECORD_FEEDBACK, SEND_FEEDBACK_TEMPLATE). Create an isActionAllowed(actionType, config) function that checks: if readOnlyMode is true, all write actions are blocked; otherwise check if the action is in the allowedActions array. Export the types and function.",
+    "Step 3 - Create src/lib/agent-guard/knowledge-auditor.ts: Create an auditKnowledgeContent(content: string) function that scans for prompt injection patterns: 'ignore previous instructions', 'ignore all instructions', persona swaps ('you are now', 'act as'), system prompt fragments ('system:', '[SYSTEM]', '<<SYS>>'), hidden instructions in markdown comments (<!-- -->), and zero-width unicode characters (U+200B, U+200C, U+200D, U+FEFF, U+202A-U+202E, U+2060, U+2066-U+2069). Return { safe: boolean, issues: string[] } indicating what was found.",
+    "Step 4 - Enhance src/lib/agent-guard/input-sanitizer.ts: Add a new constant ZERO_WIDTH_CHARS with a regex matching U+200B, U+200C, U+200D, U+FEFF, U+202A-U+202E, U+2060, U+2066-U+2069. In the sanitizeInput function, before existing pattern checks, detect and strip these characters. If any are found, add to matchedPatterns with a descriptive label like 'zero-width characters'. This is additive - do NOT remove any existing logic.",
+    "Step 5 - Update src/lib/agent-guard/index.ts: Export the new action-permissions module (isActionAllowed, ActionType, ActionPermissionConfig types) and the knowledge-auditor module (auditKnowledgeContent, AuditResult type). Also update the GuardConfig interface to include readOnlyMode and allowedActions fields.",
+    "Step 6 - Integrate knowledge audit into src/app/api/knowledge/route.ts: In the POST handler, after the existing validation checks (title, content, category) but before prisma.knowledgeEntry.create, import and call auditKnowledgeContent(content). If the result is not safe, return a 400 response with the issues. This does NOT change how knowledge is stored or retrieved - it only adds a validation gate.",
+    "Step 7 - Update src/app/api/pengaturan/agent-guard/route.ts: Add validation and handling for the two new fields (readOnlyMode as boolean, allowedActions as JSON array of strings). Follow the exact same validation pattern used for existing fields like isEnabled (for boolean) and allowedTopics (for JSON array).",
+    "Step 8 - Update src/app/(dashboard)/pengaturan/components/AgentGuardSettings.tsx: Add a 'Read-Only Mode' toggle (using Switch component, similar to isEnabled) and an 'Action Permissions' section with checkboxes for each action type (SEND_MESSAGE, CREATE_FOLLOWUP, UPDATE_STOCK, RECORD_FEEDBACK, SEND_FEEDBACK_TEMPLATE). Include these in the fetch, state management, and save logic. Place them after the Enable/Disable card.",
+    "Step 9 - Update README.md: Add a new section '## Keamanan Agent (Agent Guard)' between the 'Feedback & Rating' section (after the Feedback & Rating table) and the '## Arsitektur' section. Document: multi-layer defense system, input sanitization with zero-width detection, scope enforcement, response limiting, output validation, action-level permissions, knowledge audit, and read-only mode. Keep all existing content intact - only insert a new section.",
+    "Step 10 - Run npm run build to verify everything compiles without errors."
+  ],
+  "acceptance_criteria": [
+    "npm run build completes with exit code 0 (no TypeScript errors)",
+    "prisma/schema.prisma has readOnlyMode and allowedActions fields in AgentGuardConfig",
+    "src/lib/agent-guard/action-permissions.ts exists with isActionAllowed function",
+    "src/lib/agent-guard/knowledge-auditor.ts exists with auditKnowledgeContent function",
+    "src/lib/agent-guard/input-sanitizer.ts detects and strips zero-width characters",
+    "src/lib/agent-guard/index.ts exports the new modules and updated GuardConfig",
+    "src/app/api/knowledge/route.ts validates content with knowledge auditor on POST",
+    "src/app/api/pengaturan/agent-guard/route.ts handles readOnlyMode and allowedActions",
+    "AgentGuardSettings.tsx shows Read-Only Mode toggle and Action Permission checkboxes",
+    "README.md contains a new section titled 'Keamanan Agent (Agent Guard)' with all subsections"
+  ],
+  "verification": [
+    "npm run build exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

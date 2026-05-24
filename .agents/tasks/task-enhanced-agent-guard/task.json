@@ -1,0 +1,7 @@
+{
+  "task_id": "task-enhanced-agent-guard",
+  "task_description": "Implement 7 enhancements to the existing agent-guard system: Read-Only Mode, Action-Level Permissions, Knowledge Auditor, Zero-Width Unicode Detection, README update, Prisma schema update, and API/UI updates. All changes are additive and must not break existing functionality.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
