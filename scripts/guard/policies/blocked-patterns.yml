@@ -1,0 +1,42 @@
+# Pola input yang diblokir - konfigurasi deklaratif
+# Digunakan sebagai referensi dan dokumentasi.
+# Runtime patterns ada di scan-input.py
+
+builtin_patterns:
+  - "act as"
+  - "pretend you are"
+  - "berpura-pura"
+  - "bertindak sebagai"
+  - "kamu adalah"
+  - "sekarang kamu"
+  - "mulai sekarang kamu"
+  - "abaikan semua instruksi"
+  - "abaikan perintah"
+  - "override instructions"
+  - "new instructions"
+  - "instruksi baru"
+
+delimiter_patterns:
+  - "```system"
+  - "<|im_start|>"
+  - "<|im_end|>"
+  - "[SYSTEM]"
+  - "[INST]"
+  - "<<SYS>>"
+  - "</SYS>"
+  - "### instruction"
+  - "### system"
+
+zero_width_chars:
+  - "U+200B"  # Zero-width space
+  - "U+200C"  # Zero-width non-joiner
+  - "U+200D"  # Zero-width joiner
+  - "U+FEFF"  # Byte order mark
+  - "U+202A"  # Left-to-right embedding
+  - "U+202B"  # Right-to-left embedding
+  - "U+202C"  # Pop directional formatting
+  - "U+202D"  # Left-to-right override
+  - "U+202E"  # Right-to-left override
+  - "U+2060"  # Word joiner
+  - "U+2066"  # Left-to-right isolate
+  - "U+2069"  # Pop directional isolate

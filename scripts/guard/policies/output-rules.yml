@@ -1,0 +1,15 @@
+# Aturan validasi output agent
+
+pii_patterns:
+  email: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+  phone_id: "(?:\\+62|62|0)8[1-9][0-9]{6,10}"
+
+system_prompt_leak_patterns:
+  - "you are an? "
+  - "your role is"
+  - "your instructions"
+  - "system message"
+  - "peran kamu adalah"
+  - "instruksi kamu"
+
+redaction_text: "[DISUNTING]"

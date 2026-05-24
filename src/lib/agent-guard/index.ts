@@ -33,6 +33,16 @@ export { ACTION_TYPES, isActionAllowed } from "./action-permissions";
 export type { AuditResult } from "./knowledge-auditor";
 export { auditKnowledgeContent } from "./knowledge-auditor";
 
+// Polyglot runner (Python + Shell bridge with TS fallback)
+export {
+  isPolyglotAvailable,
+  runGuardInput,
+  runGuardOutput,
+  runKnowledgeAudit,
+  runSkillScan,
+} from "./runner";
+export type { SkillScanResult } from "./runner";
+
 export interface GuardConfig {
   id: string;
   isEnabled: boolean;
