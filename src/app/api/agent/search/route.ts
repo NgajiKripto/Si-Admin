@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { searchByVector } from "@/lib/langchain/embeddings-service";
 
 interface SearchResult {
   id: string;
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
       }),
       prisma.agentMemory.findMany({
         where: {
+          tier: { not: { contains: "_ARCHIVED" } },
           OR: memoryOrConditions,
         },
         take: 100,
@@ -99,14 +101,14 @@ export async function POST(request: NextRequest) {
       docFrequencies.set(keyword, count);
     }
 
-    const results: SearchResult[] = [];
+    // BM25 results
+    const bm25Results: SearchResult[] = [];
 
-    // Score knowledge entries
     for (const entry of knowledgeEntries) {
       const text = entry.title + " " + entry.content;
       const score = calculateScore(text, keywords, totalDocs, docFrequencies);
       if (score > 0) {
-        results.push({
+        bm25Results.push({
           id: entry.id,
           type: "knowledge",
           title: entry.title,
@@ -117,11 +119,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Score memories
     for (const mem of memories) {
       const score = calculateScore(mem.content, keywords, totalDocs, docFrequencies);
       if (score > 0) {
-        results.push({
+        bm25Results.push({
           id: mem.id,
           type: "memory",
           title: mem.tier,
@@ -132,16 +133,96 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Normalize scores to 0-1
-    const maxScore = Math.max(...results.map((r) => r.score), 1);
-    for (const result of results) {
-      result.score = Math.round((result.score / maxScore) * 100) / 100;
+    // Sort BM25 results by score desc
+    bm25Results.sort((a, b) => b.score - a.score);
+
+    // Attempt vector search for hybrid results
+    let vectorResults: Array<{
+      id: string;
+      type: "knowledge" | "memory";
+      title: string;
+      content_preview: string;
+      sourceId: string;
+    }> = [];
+
+    try {
+      const vectorHits = await searchByVector(query, 20);
+      vectorResults = vectorHits.map((hit) => ({
+        id: hit.sourceId,
+        type: hit.sourceType === "KNOWLEDGE" ? "knowledge" as const : "memory" as const,
+        title: hit.content.substring(0, 50),
+        content_preview: hit.content.substring(0, 150),
+        sourceId: hit.sourceId,
+      }));
+    } catch {
+      // Vector search failed (no API key, no embeddings, etc.) - continue with BM25 only
     }
 
-    // Sort by score desc and limit
-    results.sort((a, b) => b.score - a.score);
-    const limitedResults = results.slice(0, limit);
+    // If no vector results, return BM25-only (normalized)
+    if (vectorResults.length === 0) {
+      const maxScore = Math.max(...bm25Results.map((r) => r.score), 1);
+      for (const result of bm25Results) {
+        result.score = Math.round((result.score / maxScore) * 100) / 100;
+      }
+      const limitedResults = bm25Results.slice(0, limit);
+      return NextResponse.json({ results: limitedResults });
+    }
 
+    // Reciprocal Rank Fusion (RRF) with k=60
+    const k = 60;
+    const rrfScores = new Map<string, { result: SearchResult; score: number }>();
+
+    // Process BM25 ranked results
+    for (let rank = 0; rank < bm25Results.length; rank++) {
+      const result = bm25Results[rank];
+      const key = `${result.type}:${result.id}`;
+      const rrfScore = 1 / (k + rank + 1);
+      const existing = rrfScores.get(key);
+      if (existing) {
+        existing.score += rrfScore;
+      } else {
+        rrfScores.set(key, { result: { ...result, score: 0 }, score: rrfScore });
+      }
+    }
+
+    // Process vector ranked results
+    for (let rank = 0; rank < vectorResults.length; rank++) {
+      const vr = vectorResults[rank];
+      const key = `${vr.type}:${vr.id}`;
+      const rrfScore = 1 / (k + rank + 1);
+      const existing = rrfScores.get(key);
+      if (existing) {
+        existing.score += rrfScore;
+      } else {
+        // Create a new result entry for vector-only results
+        rrfScores.set(key, {
+          result: {
+            id: vr.id,
+            type: vr.type,
+            title: vr.title,
+            content_preview: vr.content_preview,
+            score: 0,
+          },
+          score: rrfScore,
+        });
+      }
+    }
+
+    // Build final results sorted by RRF score
+    const combinedResults: SearchResult[] = [];
+    for (const [, { result, score }] of rrfScores) {
+      combinedResults.push({ ...result, score: Math.round(score * 10000) / 10000 });
+    }
+
+    combinedResults.sort((a, b) => b.score - a.score);
+
+    // Normalize to 0-1 scale
+    const maxRRF = Math.max(...combinedResults.map((r) => r.score), 0.0001);
+    for (const result of combinedResults) {
+      result.score = Math.round((result.score / maxRRF) * 100) / 100;
+    }
+
+    const limitedResults = combinedResults.slice(0, limit);
     return NextResponse.json({ results: limitedResults });
   } catch (error) {
     console.error("Error performing search:", error);

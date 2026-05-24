@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement vector embeddings with true hybrid search (BM25 + cosine similarity), and LLM-powered automatic memory consolidation that summarizes working memory, extracts facts, and identifies patterns.",
+  "status": "completed",
+  "steps": [
+    "Create src/lib/langchain/embeddings-service.ts - Service that: (1) generates embedding for a text and stores in VectorEmbedding table, (2) batch generates embeddings for multiple entries, (3) searches VectorEmbedding by cosine similarity against a query embedding, (4) has a function to sync all existing KnowledgeEntry and AgentMemory records that don't have embeddings yet.",
+    "Create src/app/api/agent/embeddings/route.ts - POST endpoint to trigger embedding generation for all knowledge entries and memories that lack embeddings. GET endpoint to check embedding coverage stats (total entries, entries with embeddings, entries without).",
+    "Update src/app/api/agent/search/route.ts - Upgrade the existing hybrid search to combine BM25 scoring (already implemented) with vector cosine similarity. New flow: (1) generate embedding for query, (2) find top-N similar vectors from VectorEmbedding table, (3) merge BM25 results with vector results using Reciprocal Rank Fusion (RRF), (4) return combined ranked results. Keep backward compatibility - if no embeddings exist, fall back to BM25-only.",
+    "Update src/app/api/knowledge/route.ts POST handler - After creating a knowledge entry, trigger embedding generation asynchronously (fire-and-forget, don't block the response).",
+    "Create src/lib/langchain/consolidation.ts - LLM-powered memory consolidation service: (1) summarizeWorkingMemories(memories: AgentMemory[]): uses LLM to generate a concise episodic summary from working memory contents, (2) extractSemanticFacts(episodicMemory: AgentMemory): uses LLM to extract key facts/entities, (3) identifyProceduralPatterns(semanticMemories: AgentMemory[]): uses LLM to identify recurring successful response patterns.",
+    "Update src/app/api/agent/memory/consolidate/route.ts - Replace the simple string concatenation logic with LLM-powered consolidation. Working->Episodic: use summarizeWorkingMemories to create meaningful summaries. Episodic->Semantic: use extractSemanticFacts to pull out discrete facts. Semantic->Procedural: use identifyProceduralPatterns for memories accessed 3+ times. Keep the existing time-based triggers (1 hour for working, 24 hours for episodic). Generate embeddings for newly created memories.",
+    "Verify: npm run build succeeds."
+  ],
+  "acceptance_criteria": [
+    "VectorEmbedding records can be created and queried by cosine similarity",
+    "POST /api/agent/embeddings triggers batch embedding generation",
+    "GET /api/agent/embeddings returns coverage stats",
+    "Hybrid search at /api/agent/search combines BM25 + vector similarity with RRF",
+    "Memory consolidation uses LLM to generate summaries and extract facts",
+    "New knowledge entries trigger async embedding generation",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All implementations done: embeddings-service.ts with storeEmbedding/batchStoreEmbeddings/searchByVector/getEmbeddingCoverage, embeddings route (GET/POST), hybrid search with RRF (k=60) in search route with graceful fallback to BM25-only, async embedding on knowledge creation, LLM-powered consolidation with summarizeWorkingMemories/extractSemanticFacts/identifyProceduralPatterns (all with fallback to original simple logic). Build and lint pass cleanly."
+}

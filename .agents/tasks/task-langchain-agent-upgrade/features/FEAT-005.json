@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Implement observability system with callback handlers for tracking token usage, latency, tool execution results, and error rates. Create metrics API endpoint and tracing system for debugging agent flows.",
+  "status": "completed",
+  "steps": [
+    "Create src/lib/langchain/callbacks/metrics-handler.ts - Implement a LangChain BaseCallbackHandler that: (1) tracks token usage per LLM call (prompt tokens, completion tokens), (2) measures latency per step (start/end timestamps for each node), (3) records tool execution results (tool name, success/failure, execution time), (4) captures errors with context. Store all metrics to AgentMetrics table via Prisma. Each handler instance is associated with a requestId and sessionId.",
+    "Create src/lib/langchain/callbacks/tracing-handler.ts - Implement a tracing callback handler that records the full execution trace of an agent flow: node transitions, state changes, tool inputs/outputs, LLM prompts/responses. Store as a JSON trace document in AgentMetrics with stepName='TRACE'. This enables full replay/debugging of any agent request.",
+    "Create src/lib/langchain/callbacks/index.ts - Export both handlers and a factory function createCallbacks(requestId: string, sessionId: string) that returns both handlers configured for a request.",
+    "Update src/lib/langchain/graph/index.ts - Wire the callback handlers into the graph compilation. Pass callbacks to the LLM invocation and tool execution steps. Ensure every graph invocation receives the metrics and tracing callbacks.",
+    "Update src/app/api/agent/chat/route.ts - Generate a unique requestId (uuid) for each request. Create callbacks with the requestId and sessionId. Pass them to the graph invocation. After completion, update AgentSession with totalTokens and totalLatencyMs.",
+    "Create src/app/api/agent/metrics/route.ts - GET endpoint for retrieving agent metrics. Query params: sessionId (optional), startDate (optional), endDate (optional), stepName (optional). Returns aggregated stats: total requests, avg latency, total tokens, tool usage breakdown, error rate. Also returns recent individual metrics entries.",
+    "Create src/app/api/agent/metrics/traces/route.ts - GET endpoint for retrieving execution traces. Query params: requestId (required). Returns the full trace document for a specific request, enabling step-by-step debugging of the agent flow.",
+    "Update src/app/api/agent/health/route.ts - Add agent metrics summary to the existing health endpoint: total agent requests (last 24h), average response latency, total tokens consumed, top used tools, error rate percentage. Query from AgentMetrics table.",
+    "Verify: npm run build succeeds."
+  ],
+  "acceptance_criteria": [
+    "MetricsHandler tracks token usage, latency, tool results per request",
+    "TracingHandler records full execution trace as JSON",
+    "Callbacks are wired into graph execution for every /api/agent/chat request",
+    "GET /api/agent/metrics returns aggregated agent performance stats",
+    "GET /api/agent/metrics/traces?requestId=X returns full trace for debugging",
+    "Agent health endpoint includes metrics summary (requests, latency, tokens, errors)",
+    "AgentSession records are updated with totalTokens and totalLatencyMs after each request",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All steps implemented successfully. Created MetricsHandler and TracingHandler extending BaseCallbackHandler from @langchain/core/callbacks/base. Both handlers are wired into graph invocation via the config callbacks parameter in both chat and stream routes. Metrics API provides aggregated stats with filtering. Traces endpoint retrieves stored JSON traces from the errorMessage field. Health endpoint augmented with 24h metrics summary. Build and lint pass with only pre-existing warnings in chat components."
+}

@@ -104,6 +104,61 @@ export async function GET() {
       totalFeedbacks: feedbacks.length,
     };
 
+    // Agent metrics summary (last 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentMetrics = await prisma.agentMetrics.findMany({
+      where: {
+        createdAt: { gte: twentyFourHoursAgo },
+        stepName: { not: "TRACE" },
+      },
+    });
+
+    const requestIds24h = new Set(recentMetrics.map((m) => m.requestId));
+    const totalRequests24h = requestIds24h.size;
+
+    const llmCalls24h = recentMetrics.filter((m) => m.stepName === "LLM_CALL");
+    const avgLatencyMs24h =
+      llmCalls24h.length > 0
+        ? Math.round(
+            llmCalls24h.reduce((sum, m) => sum + m.latencyMs, 0) /
+              llmCalls24h.length
+          )
+        : 0;
+
+    const totalTokens24h = recentMetrics.reduce(
+      (sum, m) => sum + m.tokensUsed,
+      0
+    );
+
+    const errorCount24h = recentMetrics.filter(
+      (m) => m.errorMessage !== null
+    ).length;
+    const errorRate24h =
+      recentMetrics.length > 0
+        ? Math.round((errorCount24h / recentMetrics.length) * 10000) / 100
+        : 0;
+
+    // Top 5 tools by usage count
+    const toolCalls24h = recentMetrics.filter(
+      (m) => m.stepName === "TOOL_CALL" && m.toolName
+    );
+    const toolCountMap = new Map<string, number>();
+    for (const tc of toolCalls24h) {
+      toolCountMap.set(tc.toolName!, (toolCountMap.get(tc.toolName!) || 0) + 1);
+    }
+    const topTools = Array.from(toolCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ toolName: name, count }));
+
+    const agentMetrics = {
+      totalRequests24h,
+      avgLatencyMs24h,
+      totalTokens24h,
+      errorRate24h,
+      topTools,
+    };
+
     return NextResponse.json({
       memoryByTier,
       knowledgeCoverage,
@@ -111,6 +166,7 @@ export async function GET() {
       graphStats,
       recentActivity,
       responseQuality,
+      agentMetrics,
     });
   } catch (error) {
     console.error("Error fetching health metrics:", error);

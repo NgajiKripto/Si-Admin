@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Implement multi-agent system with specialized sub-agents (CS Agent, Stock Agent, Follow-up Agent) coordinated via LangGraph subgraphs, plus streaming responses endpoint and human-in-the-loop approval mechanism.",
+  "status": "completed",
+  "steps": [
+    "Create src/lib/langchain/agents/cs-agent.ts - Specialized CS (Customer Service) sub-agent as a LangGraph subgraph. Has access to tools: search_knowledge, get_customer_history, send_feedback_template. Uses CS-specific system prompt focused on customer interaction, empathy, and Indonesian communication style.",
+    "Create src/lib/langchain/agents/stock-agent.ts - Specialized Stock sub-agent as a LangGraph subgraph. Has access to tools: check_stock, update_stock. Uses stock-specific system prompt focused on inventory management, stock alerts, and accurate quantity reporting.",
+    "Create src/lib/langchain/agents/followup-agent.ts - Specialized Follow-up sub-agent as a LangGraph subgraph. Has access to tools: create_follow_up, get_customer_history. Uses follow-up-specific system prompt focused on scheduling, priority management, and customer relationship maintenance.",
+    "Create src/lib/langchain/agents/router.ts - Router agent that analyzes the user query and decides which sub-agent to invoke. Uses LLM with a classification prompt that maps intent to: 'cs' (general questions, product info, complaints), 'stock' (inventory queries, stock updates), 'followup' (scheduling, reminders, follow-up management). Returns the selected agent key.",
+    "Create src/lib/langchain/agents/index.ts - Export multi-agent orchestrator. Create a master StateGraph that: START -> guard_input -> router -> (conditional branch to cs_agent | stock_agent | followup_agent) -> guard_output -> END. Each sub-agent is invoked as a subgraph node.",
+    "Update src/lib/langchain/graph/index.ts - Add option to use multi-agent graph or single-agent graph based on config. Export both: agentGraph (single) and multiAgentGraph (multi). Default to multi-agent.",
+    "Create src/app/api/agent/chat/stream/route.ts - Streaming endpoint using Web ReadableStream. POST accepts same payload as /api/agent/chat. Uses the graph's stream mode to emit tokens as they come from LLM. Format: Server-Sent Events (SSE) with event types: 'token' (partial text), 'tool_call' (tool invocation info), 'tool_result' (tool output), 'done' (final response), 'error'. Include proper headers for SSE.",
+    "Create src/app/api/agent/approval/route.ts - Human-in-the-loop endpoints. GET: list pending approvals from HumanApprovalQueue (status=PENDING). POST: approve or reject an action { id: string, action: 'approve'|'reject', notes?: string }. When approved, execute the stored action (parse actionPayload, call the appropriate tool). When rejected, update status and notify.",
+    "Update src/lib/langchain/graph/nodes/check-approval.ts - Implement approval check logic: define which actions require approval (e.g., UPDATE_STOCK with quantity > 50, CREATE_FOLLOWUP with HIGH priority). If approval needed, store in HumanApprovalQueue, set requiresApproval=true, set finalResponse to 'Aksi ini memerlukan persetujuan admin. Silakan tunggu konfirmasi.'",
+    "Update src/app/api/agent/chat/route.ts - Add support for resuming after approval. Accept optional approvalId parameter. If provided, load the approved action from queue and continue execution.",
+    "Verify: npm run build succeeds."
+  ],
+  "acceptance_criteria": [
+    "Three specialized sub-agents exist: CS, Stock, Follow-up",
+    "Router agent correctly classifies intent and routes to appropriate sub-agent",
+    "Multi-agent StateGraph with subgraph nodes compiles and exports",
+    "POST /api/agent/chat/stream returns SSE stream with token events",
+    "GET /api/agent/approval returns pending approval queue",
+    "POST /api/agent/approval can approve/reject actions and execute them",
+    "High-impact actions are intercepted and queued for approval",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 11 steps implemented successfully. Used `unknown` type assertions instead of `any` to satisfy eslint. The multi-agent graph avoids circular imports by having agents/index.ts import from graph/state and graph/nodes, while graph/index.ts imports from agents/index.ts. The streaming endpoint uses LangGraph stream mode 'updates' to emit SSE events. The approval check is integrated into execute-tool node to intercept before execution. Pre-existing lint warnings in chat components remain unchanged."
+}
