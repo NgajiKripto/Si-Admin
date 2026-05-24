@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  summarizeWorkingMemories,
+  extractSemanticFacts,
+  identifyProceduralPatterns,
+} from "@/lib/langchain/consolidation";
+import { storeEmbedding } from "@/lib/langchain/embeddings-service";
 
 export async function POST() {
   try {
@@ -17,15 +23,15 @@ export async function POST() {
 
     let workingToEpisodic = 0;
     if (oldWorkingMemories.length > 0) {
-      // Combine similar working memories into one episodic summary
-      const summary = oldWorkingMemories
-        .map((m) => m.content)
-        .join(" | ");
+      // Use LLM to generate a meaningful episodic summary
+      const summary = await summarizeWorkingMemories(
+        oldWorkingMemories.map((m) => ({ content: m.content, context: m.context }))
+      );
 
-      await prisma.agentMemory.create({
+      const episodicMemory = await prisma.agentMemory.create({
         data: {
           tier: "EPISODIC",
-          content: `Ringkasan: ${summary.substring(0, 500)}`,
+          content: summary,
           context: `Konsolidasi dari ${oldWorkingMemories.length} memori kerja`,
           strength: 0.8,
           decayFactor: 0.9,
@@ -35,6 +41,11 @@ export async function POST() {
           }),
         },
       });
+
+      // Fire-and-forget: generate embedding for new episodic memory
+      storeEmbedding("MEMORY", episodicMemory.id, episodicMemory.content).catch((err) =>
+        console.error("Failed to generate embedding for episodic memory:", err)
+      );
 
       // Delete consumed working memories after promotion
       await prisma.agentMemory.deleteMany({
@@ -56,21 +67,30 @@ export async function POST() {
 
     let episodicToSemantic = 0;
     if (oldEpisodicMemories.length > 0) {
-      // Extract key facts into semantic entries
       for (const mem of oldEpisodicMemories) {
-        await prisma.agentMemory.create({
-          data: {
-            tier: "SEMANTIC",
-            content: `Fakta: ${mem.content.substring(0, 300)}`,
-            context: `Diekstrak dari memori episodik`,
-            strength: 0.9,
-            decayFactor: 0.95,
-            metadata: JSON.stringify({
-              sourceId: mem.id,
-              consolidatedAt: now.toISOString(),
-            }),
-          },
-        });
+        // Use LLM to extract discrete facts
+        const facts = await extractSemanticFacts(mem.content);
+
+        for (const fact of facts) {
+          const semanticMemory = await prisma.agentMemory.create({
+            data: {
+              tier: "SEMANTIC",
+              content: fact,
+              context: `Diekstrak dari memori episodik`,
+              strength: 0.9,
+              decayFactor: 0.95,
+              metadata: JSON.stringify({
+                sourceId: mem.id,
+                consolidatedAt: now.toISOString(),
+              }),
+            },
+          });
+
+          // Fire-and-forget: generate embedding for new semantic memory
+          storeEmbedding("MEMORY", semanticMemory.id, semanticMemory.content).catch((err) =>
+            console.error("Failed to generate embedding for semantic memory:", err)
+          );
+        }
       }
 
       // Delete consumed episodic memories after promotion
@@ -94,8 +114,9 @@ export async function POST() {
     let semanticToProcedural = 0;
     const promotedSemanticIds: string[] = [];
     if (frequentSemanticMemories.length > 0) {
+      // Check which ones don't already have procedural entries
+      const toPromote: typeof frequentSemanticMemories = [];
       for (const mem of frequentSemanticMemories) {
-        // Check if procedural already exists for this source
         const existing = await prisma.agentMemory.findFirst({
           where: {
             tier: "PROCEDURAL",
@@ -104,23 +125,40 @@ export async function POST() {
         });
 
         if (!existing) {
-          await prisma.agentMemory.create({
-            data: {
-              tier: "PROCEDURAL",
-              content: `Pola: ${mem.content.substring(0, 300)}`,
-              context: `Pola dari memori semantik yang sering diakses`,
-              strength: 1.0,
-              decayFactor: 0.99,
-              metadata: JSON.stringify({
-                sourceId: mem.id,
-                accessCount: mem.accessCount,
-                consolidatedAt: now.toISOString(),
-              }),
-            },
-          });
-          promotedSemanticIds.push(mem.id);
-          semanticToProcedural++;
+          toPromote.push(mem);
         }
+      }
+
+      if (toPromote.length > 0) {
+        // Use LLM to identify procedural patterns from all semantic contents
+        const patternContent = await identifyProceduralPatterns(
+          toPromote.map((m) => m.content)
+        );
+
+        const proceduralMemory = await prisma.agentMemory.create({
+          data: {
+            tier: "PROCEDURAL",
+            content: patternContent,
+            context: `Pola dari ${toPromote.length} memori semantik yang sering diakses`,
+            strength: 1.0,
+            decayFactor: 0.99,
+            metadata: JSON.stringify({
+              sourceIds: toPromote.map((m) => m.id),
+              accessCounts: toPromote.map((m) => m.accessCount),
+              consolidatedAt: now.toISOString(),
+            }),
+          },
+        });
+
+        // Fire-and-forget: generate embedding for new procedural memory
+        storeEmbedding("MEMORY", proceduralMemory.id, proceduralMemory.content).catch((err) =>
+          console.error("Failed to generate embedding for procedural memory:", err)
+        );
+
+        for (const mem of toPromote) {
+          promotedSemanticIds.push(mem.id);
+        }
+        semanticToProcedural = toPromote.length;
       }
 
       // Delete consumed semantic memories after promotion

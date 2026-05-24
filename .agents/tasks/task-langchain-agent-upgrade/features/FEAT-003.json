@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Implement vector embeddings with true hybrid search (BM25 + cosine similarity), and LLM-powered automatic memory consolidation that summarizes working memory, extracts facts, and identifies patterns.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/langchain/embeddings-service.ts - Service that: (1) generates embedding for a text and stores in VectorEmbedding table, (2) batch generates embeddings for multiple entries, (3) searches VectorEmbedding by cosine similarity against a query embedding, (4) has a function to sync all existing KnowledgeEntry and AgentMemory records that don't have embeddings yet.",
     "Create src/app/api/agent/embeddings/route.ts - POST endpoint to trigger embedding generation for all knowledge entries and memories that lack embeddings. GET endpoint to check embedding coverage stats (total entries, entries with embeddings, entries without).",
