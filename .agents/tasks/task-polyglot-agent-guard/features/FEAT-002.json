@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Create the TypeScript bridge (runner.ts) that connects the polyglot scripts to the Next.js app, and update the README.md to document the new polyglot architecture. The runner.ts will attempt to call Python/Shell scripts via child_process and fall back to the existing TypeScript guard implementation when scripts are unavailable.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/lib/agent-guard/runner.ts - TypeScript bridge that: (1) Imports existing TS guard functions as fallback. (2) Provides runGuardInput(input, config) that tries to call 'python3 scripts/guard/scan-input.py' via child_process.execSync with JSON stdin, parses JSON stdout result, falls back to TS sanitizeInput if Python unavailable or errors. (3) Provides runGuardOutput(output, config) that tries to call 'bash scripts/guard/validate-output.sh' with input via stdin, parses JSON stdout, falls back to TS validateOutput. (4) Provides runKnowledgeAudit(content) that tries Python audit-knowledge.py, falls back to TS auditKnowledgeContent. (5) Provides runSkillScan(filePath) that calls bash scan-skill.sh. (6) Loads YAML policies from scripts/guard/policies/ using a simple YAML parser (or reads them as structured text). (7) All functions return the same typed interfaces (SanitizeResult, ValidationResult, AuditResult). (8) Exports a isPolyglotAvailable() function that checks if python3 and bash are accessible. Use path.resolve(__dirname, '../../../../scripts/guard/...') or process.cwd() based resolution for script paths.",
     "Update src/lib/agent-guard/index.ts to also export the runner functions (runGuardInput, runGuardOutput, runKnowledgeAudit, runSkillScan, isPolyglotAvailable) from './runner'. Keep all existing exports intact.",
@@ -21,5 +21,5 @@
     "npm run lint"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build and lint pass cleanly. runner.ts created with all 5 exported functions (isPolyglotAvailable, runGuardInput, runGuardOutput, runKnowledgeAudit, runSkillScan) plus SkillScanResult interface. index.ts re-exports all runner functions. README updated with polyglot architecture section. Pre-existing lint warnings in chat components are unrelated."
 }
