@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement LangChain tools for the agent (search_knowledge, check_stock, create_follow_up, get_customer_history, send_feedback_template, update_stock), create the RAG pipeline, build the LangGraph StateGraph agent orchestration with guard integration, and expose a new /api/agent/chat endpoint.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/lib/langchain/tools/search-knowledge.ts - Define a LangChain DynamicStructuredTool using zod schema. Input: query (string), limit (optional number). Implementation: call the existing BM25 search logic from src/app/api/agent/search/route.ts (extract the search logic into a shared function at src/lib/langchain/tools/utils/search-engine.ts). Return top results as formatted string.",
     "Create src/lib/langchain/tools/check-stock.ts - DynamicStructuredTool. Input: productName (string) or sku (optional string). Implementation: query prisma.stockItem with name contains or sku match, return stock info (name, sku, quantity, price, category).",
@@ -34,5 +34,5 @@
     "npm run build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 6 LangChain tools created with DynamicStructuredTool and zod schemas. LangGraph StateGraph built with conditional edges (guard_input blocks -> END, tool_calls -> execute_tool loop, else -> guard_output). ToolNode from @langchain/langgraph/prebuilt used for tool execution. The check-approval node is a placeholder (passes through). Build and lint pass cleanly. Pre-existing lint warnings in chat components are unrelated."
 }
