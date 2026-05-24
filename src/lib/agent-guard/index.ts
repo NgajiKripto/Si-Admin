@@ -16,7 +16,7 @@ export type { SanitizeResult } from "./input-sanitizer";
  * stripped, but the sanitized text may still contain partial attack payloads.
  * Do NOT forward sanitizedInput to an LLM without verifying safe === true.
  */
-export { sanitizeInput } from "./input-sanitizer";
+export { sanitizeInput, ZERO_WIDTH_CHARS_PATTERN } from "./input-sanitizer";
 
 export type { ScopeResult } from "./scope-classifier";
 export { classifyScope } from "./scope-classifier";

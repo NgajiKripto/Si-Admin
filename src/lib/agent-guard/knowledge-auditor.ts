@@ -1,14 +1,9 @@
+import { ZERO_WIDTH_CHARS_PATTERN } from "./input-sanitizer";
+
 export interface AuditResult {
   safe: boolean;
   issues: string[];
 }
-
-/**
- * Zero-width and bidirectional control characters that could be used
- * to hide malicious content in knowledge entries.
- */
-const ZERO_WIDTH_REGEX =
-  /[\u200B\u200C\u200D\uFEFF\u202A-\u202E\u2060\u2066-\u2069]/g;
 
 /**
  * Patterns that indicate prompt injection attempts in knowledge content.
@@ -27,7 +22,7 @@ const INJECTION_PATTERNS: { pattern: RegExp; label: string }[] = [
     label: "Persona swap: 'you are now'",
   },
   {
-    pattern: /act\s+as/i,
+    pattern: /(?:i\s+want\s+you\s+to\s+|please\s+|you\s+(?:must|should|will)\s+)act\s+as/i,
     label: "Persona swap: 'act as'",
   },
   {
@@ -56,7 +51,7 @@ export function auditKnowledgeContent(content: string): AuditResult {
   const issues: string[] = [];
 
   // Check for zero-width characters
-  if (ZERO_WIDTH_REGEX.test(content)) {
+  if (ZERO_WIDTH_CHARS_PATTERN.test(content)) {
     issues.push(
       "Terdeteksi karakter zero-width yang mencurigakan (bisa menyembunyikan konten berbahaya)"
     );

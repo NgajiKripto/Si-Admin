@@ -35,7 +35,7 @@ const DELIMITER_PATTERNS: RegExp[] = [
 ];
 
 // Zero-width and bidirectional control characters used to hide malicious content
-const ZERO_WIDTH_CHARS =
+export const ZERO_WIDTH_CHARS_PATTERN =
   /[\u200B\u200C\u200D\uFEFF\u202A-\u202E\u2060\u2066-\u2069]/g;
 
 export function sanitizeInput(
@@ -46,9 +46,9 @@ export function sanitizeInput(
   let sanitizedInput = input;
 
   // Detect and strip zero-width characters BEFORE other pattern checks
-  if (ZERO_WIDTH_CHARS.test(sanitizedInput)) {
+  if (ZERO_WIDTH_CHARS_PATTERN.test(sanitizedInput)) {
     matchedPatterns.push("zero-width characters");
-    sanitizedInput = sanitizedInput.replace(ZERO_WIDTH_CHARS, "");
+    sanitizedInput = sanitizedInput.replace(ZERO_WIDTH_CHARS_PATTERN, "");
   }
 
   // Check config-defined blocked patterns (case-insensitive)

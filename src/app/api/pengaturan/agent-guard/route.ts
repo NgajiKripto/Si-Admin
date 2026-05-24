@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ACTION_TYPES } from "@/lib/agent-guard/action-permissions";
 
 export async function GET() {
   try {
@@ -140,7 +141,13 @@ export async function PATCH(request: NextRequest) {
         if (!Array.isArray(parsed) || !parsed.every((item: unknown) => typeof item === "string")) {
           errors.push("allowedActions harus berupa JSON array of strings");
         } else {
-          data.allowedActions = body.allowedActions;
+          const validActions = ACTION_TYPES as readonly string[];
+          const invalidActions = parsed.filter((item: string) => !validActions.includes(item));
+          if (invalidActions.length > 0) {
+            errors.push(`allowedActions mengandung aksi tidak valid: ${invalidActions.join(", ")}`);
+          } else {
+            data.allowedActions = body.allowedActions;
+          }
         }
       } catch {
         errors.push("allowedActions harus berupa JSON yang valid");
