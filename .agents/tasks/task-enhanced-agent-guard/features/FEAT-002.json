@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement all 7 agent-guard enhancements: (1) Read-Only Mode config + isActionAllowed utility, (2) Action-Level Permissions module, (3) Knowledge Auditor module, (4) Zero-Width Unicode Detection in input-sanitizer, (5) Update README with Agent Guard documentation section, (6) Update Prisma schema with readOnlyMode and allowedActions fields, (7) Update API route and UI to handle new fields. All changes are ADDITIVE and must not break existing functionality.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - Update prisma/schema.prisma: Add two new fields to the AgentGuardConfig model: readOnlyMode Boolean @default(false) and allowedActions String @default(\"[\\\"SEND_MESSAGE\\\",\\\"CREATE_FOLLOWUP\\\",\\\"UPDATE_STOCK\\\",\\\"RECORD_FEEDBACK\\\",\\\"SEND_FEEDBACK_TEMPLATE\\\"]\"). Then run npx prisma generate and npx prisma db push.",
     "Step 2 - Create src/lib/agent-guard/action-permissions.ts: Define an enum/type for action types (SEND_MESSAGE, CREATE_FOLLOWUP, UPDATE_STOCK, RECORD_FEEDBACK, SEND_FEEDBACK_TEMPLATE). Create an isActionAllowed(actionType, config) function that checks: if readOnlyMode is true, all write actions are blocked; otherwise check if the action is in the allowedActions array. Export the types and function.",
@@ -31,5 +31,5 @@
     "npm run build exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 10 steps implemented successfully. Had to also fix example-usage.ts and getDefaultConfig() in index.ts to include the new readOnlyMode and allowedActions fields (they referenced the GuardConfig type). npm run build passes cleanly with no TypeScript errors. All changes are additive - no existing functionality was removed or broken."
 }
