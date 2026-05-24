@@ -2,7 +2,7 @@
   "id": "FEAT-006",
   "type": "fix",
   "description": "Fix 9 issues found in the semantic review: double graph invocation, unbounded vector scan, unauthenticated approval, trace size, sub-agent iteration caps, fire-and-forget docs, LLM singleton docs, allowedActions enforcement, and memory hard-deletes.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix Issue 1: Remove double graph.invoke() in stream route, accumulate finalResponse from streamed events",
     "Fix Issue 2: Add take limit to searchByVector Prisma query",
@@ -31,5 +31,5 @@
     "npm run lint"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 9 issues fixed successfully. Build and lint pass. Key changes: (1) Stream route accumulates finalResponse from events instead of calling invoke() again. (2) searchByVector now has take:1000 limit. (3) Approval endpoint checks x-admin-token header. (4) Trace JSON truncated to 100KB. (5) recursionLimit passed from config to all graph invocations. (6-7) Documentation comments added. (8) createGuardedTools wrapper checks isActionAllowed per tool. (9) Consolidation uses updateMany with _ARCHIVED suffix instead of deleteMany, queries exclude archived tiers."
 }
