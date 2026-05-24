@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "feat",
   "description": "Implement observability system with callback handlers for tracking token usage, latency, tool execution results, and error rates. Create metrics API endpoint and tracing system for debugging agent flows.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/langchain/callbacks/metrics-handler.ts - Implement a LangChain BaseCallbackHandler that: (1) tracks token usage per LLM call (prompt tokens, completion tokens), (2) measures latency per step (start/end timestamps for each node), (3) records tool execution results (tool name, success/failure, execution time), (4) captures errors with context. Store all metrics to AgentMetrics table via Prisma. Each handler instance is associated with a requestId and sessionId.",
     "Create src/lib/langchain/callbacks/tracing-handler.ts - Implement a tracing callback handler that records the full execution trace of an agent flow: node transitions, state changes, tool inputs/outputs, LLM prompts/responses. Store as a JSON trace document in AgentMetrics with stepName='TRACE'. This enables full replay/debugging of any agent request.",

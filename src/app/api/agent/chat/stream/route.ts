@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import { HumanMessage } from "@langchain/core/messages";
+import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
+import { createCallbacks } from "@/lib/langchain/callbacks";
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -52,6 +54,13 @@ export async function POST(request: NextRequest) {
 
     const graph = getGraph("multi");
 
+    // Create callbacks for observability
+    const requestId = uuidv4();
+    const { metricsHandler, tracingHandler, callbacks } = createCallbacks(
+      requestId,
+      session.id
+    );
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -61,7 +70,7 @@ export async function POST(request: NextRequest) {
               messages: [new HumanMessage(message)],
               sessionId: session.id,
             },
-            { streamMode: "updates" }
+            { streamMode: "updates", callbacks }
           );
 
           for await (const event of eventStream) {
@@ -95,18 +104,34 @@ export async function POST(request: NextRequest) {
           }
 
           // Send done event
-          const result = await graph.invoke({
-            messages: [new HumanMessage(message)],
-            sessionId: session.id,
-          });
+          const result = await graph.invoke(
+            {
+              messages: [new HumanMessage(message)],
+              sessionId: session.id,
+            },
+            { callbacks }
+          );
 
           const finalResponse =
             result.finalResponse ||
             "Maaf, saya tidak dapat memproses permintaan Anda saat ini.";
 
+          // Save trace and update session
+          const metrics = metricsHandler.getAccumulatedMetrics();
+          await tracingHandler.saveTrace();
+          await prisma.agentSession.update({
+            where: { id: session.id },
+            data: {
+              status: "COMPLETED",
+              endedAt: new Date(),
+              totalTokens: metrics.totalTokens,
+              totalLatencyMs: metrics.totalLatencyMs,
+            },
+          });
+
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ type: "done", content: finalResponse, sessionId: session.id })}\n\n`
+              `data: ${JSON.stringify({ type: "done", content: finalResponse, sessionId: session.id, requestId })}\n\n`
             )
           );
         } catch (error) {

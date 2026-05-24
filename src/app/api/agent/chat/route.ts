@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { HumanMessage } from "@langchain/core/messages";
+import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
 import { getAgentTools } from "@/lib/langchain/tools";
+import { createCallbacks } from "@/lib/langchain/callbacks";
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,19 +103,43 @@ export async function POST(request: NextRequest) {
     // Use multi-agent graph by default
     const graph = getGraph("multi");
 
-    // Invoke the agent graph
-    const result = await graph.invoke({
-      messages: [new HumanMessage(message)],
-      sessionId: session.id,
-    });
+    // Create callbacks for observability
+    const requestId = uuidv4();
+    const { metricsHandler, tracingHandler, callbacks } = createCallbacks(
+      requestId,
+      session.id
+    );
+
+    // Invoke the agent graph with callbacks
+    const result = await graph.invoke(
+      {
+        messages: [new HumanMessage(message)],
+        sessionId: session.id,
+      },
+      { callbacks }
+    );
 
     const finalResponse =
       result.finalResponse ||
       "Maaf, saya tidak dapat memproses permintaan Anda saat ini.";
 
+    // Save trace and update session with accumulated metrics
+    const metrics = metricsHandler.getAccumulatedMetrics();
+    await tracingHandler.saveTrace();
+    await prisma.agentSession.update({
+      where: { id: session.id },
+      data: {
+        status: "COMPLETED",
+        endedAt: new Date(),
+        totalTokens: metrics.totalTokens,
+        totalLatencyMs: metrics.totalLatencyMs,
+      },
+    });
+
     return NextResponse.json({
       response: finalResponse,
       sessionId: session.id,
+      requestId,
     });
   } catch (error) {
     console.error("Error in agent chat:", error);
