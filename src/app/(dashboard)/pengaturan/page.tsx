@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BusinessProfileForm from "./components/BusinessProfileForm";
 import ChannelManager from "./components/ChannelManager";
 import CategoryManager from "./components/CategoryManager";
+import AgentGuardSettings from "./components/AgentGuardSettings";
 
 export default function PengaturanPage() {
   return (
@@ -20,6 +21,7 @@ export default function PengaturanPage() {
           <TabsTrigger value="profil">Profil Bisnis</TabsTrigger>
           <TabsTrigger value="channel">Channel</TabsTrigger>
           <TabsTrigger value="kustomisasi">Kustomisasi</TabsTrigger>
+          <TabsTrigger value="keamanan">Keamanan Agent</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profil" className="mt-4">
@@ -32,6 +34,10 @@ export default function PengaturanPage() {
 
         <TabsContent value="kustomisasi" className="mt-4">
           <CategoryManager />
+        </TabsContent>
+
+        <TabsContent value="keamanan" className="mt-4">
+          <AgentGuardSettings />
         </TabsContent>
       </Tabs>
     </div>

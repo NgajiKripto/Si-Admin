@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the agent-guard module library, Prisma schema model, API route, and dashboard UI. This is the core feature that adds multi-layer defense for the AI agent including input sanitization, scope enforcement, response limiting, and output validation.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Add AgentGuardConfig model to prisma/schema.prisma. The model should store: id (cuid), isEnabled (Boolean default true), maxResponseLength (Int default 500), maxResponseTokens (Int default 200), allowedTopics (String - JSON serialized array of allowed topic strings, default Indonesian CS topics like produk, harga, pengiriman, pembayaran, keluhan, retur, promo, jam operasional, stok), blockedPatterns (String - JSON serialized array of regex patterns to detect prompt injection), blockedOutputPatterns (String - JSON serialized array of patterns to block in output like system prompt leaks), responseFormat (String default 'text' - one of 'text', 'structured'), systemPromptHash (String nullable - hash of system prompt for leak detection), createdAt, updatedAt. Run npx prisma generate and npx prisma db push after schema change.",
     "Create src/lib/agent-guard/input-sanitizer.ts: Export a function sanitizeInput(input: string, config: GuardConfig): SanitizeResult. It should check for common prompt injection patterns like 'ignore previous instructions', 'you are now', 'system:', 'forget everything', 'jailbreak', role-switching attempts, and custom patterns from config.blockedPatterns. Return { safe: boolean, reason?: string, sanitizedInput: string }. Include Indonesian-language injection patterns too (e.g., 'abaikan instruksi', 'lupakan semua').",
