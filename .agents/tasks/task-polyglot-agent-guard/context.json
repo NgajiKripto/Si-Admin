@@ -1,0 +1,28 @@
+{
+  "project_type": "Next.js 16 admin dashboard with Prisma ORM and SQLite",
+  "language": "TypeScript (primary), Python and Shell (new polyglot layers)",
+  "build_system": "npm with Next.js build system",
+  "test_framework": "No test framework configured; verification via npm run build",
+  "build_command": "npm run build",
+  "test_command": "npm run build && python3 scripts/guard/scan-input.py --test && bash scripts/guard/scan-skill.sh --test",
+  "verification_instructions": "1. Run npm run build to verify no TypeScript/Next.js breakage. 2. Run python3 scripts/guard/scan-input.py with test input to verify Python layer. 3. Run bash scripts/guard/scan-skill.sh --help to verify shell layer. 4. Run bash scripts/guard/validate-output.sh --help to verify output shell layer.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install (already done); Python 3.9+ available via pyenv; Bash 5.2 available",
+  "environment_constraints": "Python must use only stdlib (no pip install). Shell must be POSIX-compatible. Node.js child_process used for bridge.",
+  "contribution_requirements": "Use Bahasa Indonesia for UI labels. Ensure npm run build and npm run lint pass. Follow existing naming conventions.",
+  "key_patterns": "Agent guard files live in src/lib/agent-guard/. Each layer exports a typed interface. The index.ts re-exports all modules and provides processInput/processOutput orchestrator functions. YAML policies will go in scripts/guard/policies/. Python/Shell scripts in scripts/guard/.",
+  "relevant_files": [
+    "src/lib/agent-guard/input-sanitizer.ts",
+    "src/lib/agent-guard/knowledge-auditor.ts",
+    "src/lib/agent-guard/output-validator.ts",
+    "src/lib/agent-guard/action-permissions.ts",
+    "src/lib/agent-guard/scope-classifier.ts",
+    "src/lib/agent-guard/response-limiter.ts",
+    "src/lib/agent-guard/index.ts",
+    "src/lib/agent-guard/example-usage.ts",
+    "src/app/api/pengaturan/agent-guard/route.ts",
+    "src/app/api/knowledge/route.ts",
+    "README.md"
+  ],
+  "directory_structure": "src/app/(dashboard)/ - UI pages, src/app/api/ - API routes, src/lib/ - shared libraries, src/components/ui/ - shadcn components, prisma/ - schema and seed, scripts/guard/ (NEW) - polyglot guard layers"
+}

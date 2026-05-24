@@ -1,0 +1,35 @@
+# Pola input yang diblokir - Agent Guard Policies
+persona_swaps:
+  - "act as"
+  - "pretend you are"
+  - "berpura-pura"
+  - "bertindak sebagai"
+  - "kamu adalah"
+  - "sekarang kamu"
+  - "mulai sekarang kamu"
+
+instruction_overrides:
+  - "abaikan semua instruksi"
+  - "abaikan perintah"
+  - "override instructions"
+  - "new instructions"
+  - "instruksi baru"
+  - "ignore previous"
+  - "forget everything"
+  - "lupakan semua"
+
+delimiter_injection:
+  - "```system"
+  - "<|im_start|>"
+  - "<|im_end|>"
+  - "[SYSTEM]"
+  - "[INST]"
+  - "<<SYS>>"
+  - "</SYS>"
+  - "### instruction"
+  - "### system"
+
+jailbreak:
+  - "jailbreak"
+  - "DAN mode"
+  - "developer mode"

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-polyglot-agent-guard",
+  "task_description": "Refactor the agent-guard system to use a polyglot/multi-language approach similar to BankrBot's architecture. Create Python scripts for input scanning and knowledge auditing, Shell scripts for skill scanning and output validation, declarative YAML files for policies, and a TypeScript bridge (runner.ts) that connects scripts to the Next.js app with fallback to existing TS implementation.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

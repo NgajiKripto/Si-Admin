@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create the polyglot guard scripts (Python, Shell) and declarative YAML policies following BankrBot's multi-language layer architecture. This includes the Python input scanner, Python knowledge auditor, Shell skill scanner, Shell output validator, and all YAML policy files.",
+  "status": "in_progress",
+  "steps": [
+    "Create scripts/guard/scan-input.py - Port input sanitization from src/lib/agent-guard/input-sanitizer.ts to Python. Use Python re module. Accept input via stdin (JSON with 'input' and optional 'blocked_patterns' fields) or via CLI argument (--input 'text'). Detect: prompt injection patterns (English + Indonesian), delimiter injection (```system, <|im_start|>, [SYSTEM], etc.), zero-width unicode chars, persona swaps. Output JSON to stdout with fields: safe (bool), reason (string|null), sanitized_input (string), matched_patterns (list). Include a --test flag that runs built-in self-tests.",
+    "Create scripts/guard/audit-knowledge.py - Port knowledge auditor from src/lib/agent-guard/knowledge-auditor.ts to Python. Accept content via stdin (JSON with 'content' field). Scan for: prompt injection patterns (ignore previous instructions, you are now, act as, system:, [SYSTEM], <<SYS>>), HTML/markdown comments with hidden instructions, zero-width characters. Output JSON to stdout with fields: safe (bool), issues (list of strings). Include a --test flag.",
+    "Create scripts/guard/scan-skill.sh - Shell-based security scanner for skill/knowledge files (inspired by BankrBot's aeon-skill-security-scan). Accept a file path or directory as argument. Scan for: shell injection patterns ($(, backticks, eval, exec), secret exfiltration (curl/wget to external URLs, env variable access), path traversal (../ patterns), prompt override patterns (ignore previous, [SYSTEM], etc.), obfuscation (zero-width unicode via hex grep, base64 decode pipes, webhook/SSRF hosts). Output structured findings as JSON to stdout. Support --help and --test flags. Make executable (chmod +x).",
+    "Create scripts/guard/validate-output.sh - Shell-based output validator. Accept output text via stdin or --input argument. Check for: PII leaks (email regex, Indonesian phone patterns 08xx/+62xx), system prompt leak patterns (you are an AI, your role is, instruksi sistem), blocked output patterns (read from policies/output-rules.yml). Output JSON to stdout with fields: valid (bool), issues (list), sanitized_output (string). Support --help and --test flags. Make executable.",
+    "Create scripts/guard/policies/blocked-patterns.yml - Declarative list of blocked input patterns including: persona_swaps (act as, pretend you are, berpura-pura, bertindak sebagai, kamu adalah, sekarang kamu, mulai sekarang kamu), instruction_overrides (abaikan semua instruksi, abaikan perintah, override instructions, new instructions, instruksi baru, ignore previous, forget everything, lupakan semua), delimiter_injection (```system, <|im_start|>, <|im_end|>, [SYSTEM], [INST], <<SYS>>, </SYS>, ### instruction, ### system), jailbreak (jailbreak, DAN mode, developer mode).",
+    "Create scripts/guard/policies/allowed-topics.yml - Declarative list of allowed topics with their keywords, matching the TOPIC_KEYWORDS from src/lib/agent-guard/scope-classifier.ts: produk, harga, pengiriman, pembayaran, keluhan, retur, stok, jam_operasional, promo, garansi.",
+    "Create scripts/guard/policies/action-permissions.yml - Action permission rules: list of all action types (SEND_MESSAGE, CREATE_FOLLOWUP, UPDATE_STOCK, RECORD_FEEDBACK, SEND_FEEDBACK_TEMPLATE), their default allowed status, description, and read_only_mode behavior.",
+    "Create scripts/guard/policies/output-rules.yml - Output validation rules: blocked_output_patterns (system prompt, instruksi sistem, you are an AI, saya adalah AI), pii_patterns with regex for email and Indonesian phone, max_response_length default, max_response_tokens default, redaction_placeholder."
+  ],
+  "acceptance_criteria": [
+    "python3 scripts/guard/scan-input.py --test exits with code 0 and prints PASS",
+    "python3 scripts/guard/audit-knowledge.py --test exits with code 0 and prints PASS",
+    "bash scripts/guard/scan-skill.sh --test exits with code 0 and prints PASS",
+    "bash scripts/guard/validate-output.sh --test exits with code 0 and prints PASS",
+    "All 4 YAML policy files are valid YAML and human-readable",
+    "Python scripts use only stdlib (no pip dependencies)",
+    "Shell scripts are POSIX-compatible (no bash-only features except for the shebang)"
+  ],
+  "verification": [
+    "python3 scripts/guard/scan-input.py --test",
+    "python3 scripts/guard/audit-knowledge.py --test",
+    "bash scripts/guard/scan-skill.sh --test",
+    "bash scripts/guard/validate-output.sh --test",
+    "python3 -c \"import yaml\" 2>&1 || echo 'Note: PyYAML not needed, scripts parse YAML manually or use simple format'"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

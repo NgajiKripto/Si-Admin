@@ -1,0 +1,15 @@
+# Aturan validasi output - Agent Guard Policies
+blocked_output_patterns:
+  - "system prompt"
+  - "instruksi sistem"
+  - "you are an AI"
+  - "saya adalah AI"
+
+pii_patterns:
+  email: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+  phone_id: "(?:\\+62|62|0)8[1-9][0-9]{6,10}"
+
+max_response_length: 2000
+max_response_tokens: 500
+
+redaction_placeholder: "[DISUNTING]"
