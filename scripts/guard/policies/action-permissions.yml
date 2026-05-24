@@ -1,5 +1,11 @@
 # Izin aksi - Agent Guard Policies
 # Konfigurasi default untuk setiap jenis aksi agent
+#
+# Human-readable specifications - canonical patterns are in the Python/Shell/TypeScript
+# implementations. Sync manually when updating.
+#
+# Runtime implementations:
+#   - src/lib/agent-guard/action-permissions.ts (ACTION_TYPES, isActionAllowed)
 actions:
   SEND_MESSAGE:
     description: "Mengirim pesan balasan ke pelanggan"

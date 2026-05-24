@@ -1,4 +1,11 @@
 # Pola input yang diblokir - Agent Guard Policies
+#
+# Human-readable specifications - canonical patterns are in the Python/Shell/TypeScript
+# implementations. Sync manually when updating.
+#
+# Runtime implementations:
+#   - scripts/guard/scan-input.py (BUILTIN_PATTERNS, DELIMITER_PATTERNS)
+#   - src/lib/agent-guard/input-sanitizer.ts (BLOCKED_PATTERNS, DELIMITER_PATTERNS)
 persona_swaps:
   - "act as"
   - "pretend you are"

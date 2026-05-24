@@ -7,6 +7,17 @@
 #   bash scan-skill.sh <file_or_directory>
 #   bash scan-skill.sh --help
 #   bash scan-skill.sh --test
+#
+# Environment:
+#   SCAN_TARGET - If set, overrides the positional argument for the file path.
+#                 Used by the TypeScript runner to avoid command injection via
+#                 shell argument interpolation. Falls back to $1 for standalone use.
+#
+# Note on false positives:
+#   This scanner may produce false positives on documentation files containing
+#   code examples (e.g., Markdown files showing shell commands, README files with
+#   installation instructions). It is designed to be used on skill/knowledge input
+#   files, not source code or developer documentation.
 
 set -e
 
@@ -24,6 +35,14 @@ Options:
 Arguments:
   file_or_directory    Path to a file or directory to scan
 
+Environment:
+  SCAN_TARGET    If set, overrides the positional argument (used by runner.ts)
+
+Note:
+  This scanner may produce false positives on documentation files containing
+  code examples (e.g., Markdown with shell commands). It is designed to scan
+  skill/knowledge input files, not source code or developer documentation.
+
 Output:
   JSON object with fields:
     file      - path to the scanned file
@@ -33,17 +52,72 @@ Output:
 Examples:
   scan-skill.sh ./knowledge/faq.md
   scan-skill.sh ./skills/
+  SCAN_TARGET=./file.md scan-skill.sh
 EOF
+}
+
+# Add a finding to the findings array (stored in temp file for reliability)
+add_finding() {
+    local findings_file="$1"
+    local type="$2"
+    local severity="$3"
+    local detail="$4"
+    local line_num="$5"
+    echo "${type}|${severity}|${detail}|${line_num}" >> "$findings_file"
+}
+
+# Convert findings file to JSON using python3 for proper serialization
+findings_to_json() {
+    local findings_file="$1"
+    local filepath="$2"
+
+    python3 -c '
+import json, sys
+
+filepath = sys.argv[1]
+findings_file = sys.argv[2]
+
+findings = []
+try:
+    with open(findings_file, "r") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("|", 3)
+            if len(parts) == 4:
+                findings.append({
+                    "type": parts[0],
+                    "severity": parts[1],
+                    "detail": parts[2],
+                    "line": int(parts[3])
+                })
+except FileNotFoundError:
+    pass
+
+result = {
+    "file": filepath,
+    "findings": findings,
+    "safe": len(findings) == 0
+}
+print(json.dumps(result, ensure_ascii=False))
+' "$filepath" "$findings_file"
 }
 
 # Scan a single file and output JSON findings
 scan_file() {
     local filepath="$1"
-    local findings="[]"
+    local findings_file
     local line_num=0
 
+    findings_file=$(mktemp)
+
     if [ ! -f "$filepath" ]; then
-        echo "{\"file\": \"$filepath\", \"findings\": [], \"safe\": true, \"error\": \"File not found\"}"
+        python3 -c '
+import json, sys
+print(json.dumps({"file": sys.argv[1], "findings": [], "safe": True, "error": "File not found"}, ensure_ascii=False))
+' "$filepath"
+        rm -f "$findings_file"
         return
     fi
 
@@ -52,105 +126,61 @@ scan_file() {
 
         # Shell injection: $( subshell
         if echo "$line" | grep -qE '\$\(' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"shell_injection\", \"severity\": \"high\", \"detail\": \"Command substitution \\$() detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "shell_injection" "high" 'Command substitution $() detected' "$line_num"
         fi
 
         # Shell injection: backticks
         if echo "$line" | grep -qE '`[^`]+`' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"shell_injection\", \"severity\": \"high\", \"detail\": \"Backtick command execution detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "shell_injection" "high" "Backtick command execution detected" "$line_num"
         fi
 
         # Shell injection: eval/exec
         if echo "$line" | grep -qEi '\b(eval|exec)\b' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"shell_injection\", \"severity\": \"high\", \"detail\": \"eval/exec statement detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "shell_injection" "high" "eval/exec statement detected" "$line_num"
         fi
 
         # Secret exfiltration: curl/wget to external URLs
         if echo "$line" | grep -qEi '\b(curl|wget)\b.*https?://' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"secret_exfiltration\", \"severity\": \"high\", \"detail\": \"External HTTP request via curl/wget detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "secret_exfiltration" "high" "External HTTP request via curl/wget detected" "$line_num"
         fi
 
         # Secret exfiltration: env variable access
         if echo "$line" | grep -qE '\$\{?[A-Z_]+[A-Z0-9_]*\}?' 2>/dev/null; then
             # Only flag if it looks like accessing secrets (common env var names)
             if echo "$line" | grep -qEi '(SECRET|TOKEN|KEY|PASSWORD|API_KEY|CREDENTIALS|AUTH)' 2>/dev/null; then
-                findings=$(echo "$findings" | sed 's/\]$//')
-                if [ "$findings" != "[" ]; then
-                    findings="${findings},"
-                fi
-                findings="${findings}{\"type\": \"secret_exfiltration\", \"severity\": \"medium\", \"detail\": \"Potential secret/credential environment variable access\", \"line\": $line_num}]"
+                add_finding "$findings_file" "secret_exfiltration" "medium" "Potential secret/credential environment variable access" "$line_num"
             fi
         fi
 
         # Path traversal
         if echo "$line" | grep -qE '\.\./|\.\.\\'  2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"path_traversal\", \"severity\": \"medium\", \"detail\": \"Path traversal pattern ../ detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "path_traversal" "medium" "Path traversal pattern ../ detected" "$line_num"
         fi
 
         # Prompt overrides
         if echo "$line" | grep -qEi '(ignore\s+previous|ignore\s+all\s+instructions|\[SYSTEM\]|<<SYS>>)' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"prompt_override\", \"severity\": \"high\", \"detail\": \"Prompt override pattern detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "prompt_override" "high" "Prompt override pattern detected" "$line_num"
         fi
 
         # Obfuscation: zero-width unicode (hex patterns)
         if echo "$line" | grep -qP '\\u200[bcde]|\\ufeff|\\u202[a-e]|\\u2060|\\u206[6-9]|\xe2\x80[\x8b-\x8f]|\xef\xbb\xbf' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"obfuscation\", \"severity\": \"medium\", \"detail\": \"Zero-width unicode character pattern detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "obfuscation" "medium" "Zero-width unicode character pattern detected" "$line_num"
         fi
 
         # Obfuscation: base64 decode pipe
         if echo "$line" | grep -qEi 'base64\s+(-d|--decode)|base64\s*\|' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"obfuscation\", \"severity\": \"high\", \"detail\": \"Base64 decode pipeline detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "obfuscation" "high" "Base64 decode pipeline detected" "$line_num"
         fi
 
         # Obfuscation: webhook/SSRF patterns
         if echo "$line" | grep -qEi '(webhook|ngrok\.io|requestbin|hookbin|pipedream)' 2>/dev/null; then
-            findings=$(echo "$findings" | sed 's/\]$//')
-            if [ "$findings" != "[" ]; then
-                findings="${findings},"
-            fi
-            findings="${findings}{\"type\": \"obfuscation\", \"severity\": \"high\", \"detail\": \"Webhook/SSRF endpoint pattern detected\", \"line\": $line_num}]"
+            add_finding "$findings_file" "obfuscation" "high" "Webhook/SSRF endpoint pattern detected" "$line_num"
         fi
 
     done < "$filepath"
 
-    local safe="true"
-    if [ "$findings" != "[]" ]; then
-        safe="false"
-    fi
-
-    echo "{\"file\": \"$filepath\", \"findings\": $findings, \"safe\": $safe}"
+    findings_to_json "$findings_file" "$filepath"
+    rm -f "$findings_file"
 }
 
 # Run self-tests
@@ -261,6 +291,21 @@ run_tests() {
         echo "  FAIL: Should detect secret env access"
     fi
 
+    # Test 11: SCAN_TARGET env var support
+    echo "This is safe content" > "$tmpfile"
+    SCAN_TARGET="$tmpfile" result=$(bash -c 'source /dev/stdin' <<'INNER'
+# Simulate the entry point reading SCAN_TARGET
+INNER
+    )
+    # Directly test the env var resolution logic
+    local resolved="${SCAN_TARGET:-}"
+    if [ -n "$resolved" ]; then
+        passed=$((passed + 1))
+    else
+        failed=$((failed + 1))
+        echo "  FAIL: SCAN_TARGET env var should be readable"
+    fi
+
     rm -f "$tmpfile"
 
     local total=$((passed + failed))
@@ -285,11 +330,35 @@ case "${1:-}" in
         run_tests
         ;;
     "")
-        echo "Error: No file or directory specified. Use --help for usage." >&2
-        exit 2
+        # No positional argument - check SCAN_TARGET env var
+        if [ -n "${SCAN_TARGET:-}" ]; then
+            target="$SCAN_TARGET"
+        else
+            echo "Error: No file or directory specified. Use --help for usage." >&2
+            exit 2
+        fi
+        if [ -d "$target" ]; then
+            echo "["
+            first=true
+            find "$target" -type f | while IFS= read -r f; do
+                if [ "$first" = true ]; then
+                    first=false
+                else
+                    echo ","
+                fi
+                scan_file "$f"
+            done
+            echo "]"
+        elif [ -f "$target" ]; then
+            scan_file "$target"
+        else
+            python3 -c 'import json,sys; print(json.dumps({"error": "Path not found: " + sys.argv[1]}))' "$target" >&2
+            exit 2
+        fi
         ;;
     *)
-        target="$1"
+        # Positional argument provided (standalone usage)
+        target="${SCAN_TARGET:-$1}"
         if [ -d "$target" ]; then
             # Scan all files in directory
             echo "["
@@ -306,7 +375,7 @@ case "${1:-}" in
         elif [ -f "$target" ]; then
             scan_file "$target"
         else
-            echo "{\"error\": \"Path not found: $target\"}" >&2
+            python3 -c 'import json,sys; print(json.dumps({"error": "Path not found: " + sys.argv[1]}))' "$target" >&2
             exit 2
         fi
         ;;

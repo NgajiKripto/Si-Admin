@@ -4,6 +4,10 @@
 Ports the logic from src/lib/agent-guard/knowledge-auditor.ts to Python.
 Uses only stdlib - no external dependencies required.
 
+Policy documentation: scripts/guard/policies/blocked-patterns.yml
+(YAML files are human-readable specifications; this script contains
+the canonical runtime patterns. Sync manually when updating.)
+
 Usage:
   echo '{"content": "text to audit"}' | python3 audit-knowledge.py
   python3 audit-knowledge.py --test

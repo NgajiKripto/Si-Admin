@@ -1,5 +1,11 @@
 # Topik yang diizinkan - Agent Guard Policies
 # Setiap topik memiliki daftar keyword untuk pencocokan
+#
+# Human-readable specifications - canonical patterns are in the Python/Shell/TypeScript
+# implementations. Sync manually when updating.
+#
+# Runtime implementations:
+#   - src/lib/agent-guard/scope-classifier.ts (TOPIC_KEYWORDS)
 topics:
   produk:
     - "produk"

@@ -1,4 +1,11 @@
 # Aturan validasi output - Agent Guard Policies
+#
+# Human-readable specifications - canonical patterns are in the Python/Shell/TypeScript
+# implementations. Sync manually when updating.
+#
+# Runtime implementations:
+#   - scripts/guard/validate-output.sh (validate_output function)
+#   - src/lib/agent-guard/output-validator.ts (validateOutput)
 blocked_output_patterns:
   - "system prompt"
   - "instruksi sistem"

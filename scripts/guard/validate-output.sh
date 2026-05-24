@@ -40,72 +40,63 @@ Examples:
 EOF
 }
 
-# Validate output text
+# Validate output text and produce JSON using python3 for safe serialization
 validate_output() {
     local text="$1"
-    local issues="[]"
-    local sanitized="$text"
 
-    # Check for email patterns
-    if echo "$sanitized" | grep -qEi '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'; then
-        issues=$(echo "$issues" | sed 's/\]$//')
-        if [ "$issues" != "[" ]; then
-            issues="${issues},"
-        fi
-        issues="${issues}\"Email terdeteksi dalam output\"]"
-        sanitized=$(echo "$sanitized" | sed -E 's/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/'"$REDACTION"'/g')
-    fi
+    # Use python3 for all validation and JSON output to handle special characters safely
+    python3 -c '
+import json, re, sys
 
-    # Check for Indonesian phone patterns (08xx, +62xx, 62xx)
-    if echo "$sanitized" | grep -qE '(\+62|62|0)8[1-9][0-9]{6,10}'; then
-        issues=$(echo "$issues" | sed 's/\]$//')
-        if [ "$issues" != "[" ]; then
-            issues="${issues},"
-        fi
-        issues="${issues}\"Nomor telepon terdeteksi dalam output\"]"
-        sanitized=$(echo "$sanitized" | sed -E 's/(\+62|62|0)8[1-9][0-9]{6,10}/'"$REDACTION"'/g')
-    fi
+text = sys.argv[1]
+redaction = sys.argv[2]
 
-    # Check for system prompt leak patterns
-    local prompt_leaked=false
-    if echo "$sanitized" | grep -qEi 'you are an AI|you are an? assistant'; then
-        prompt_leaked=true
-    fi
-    if echo "$sanitized" | grep -qEi 'your role is'; then
-        prompt_leaked=true
-    fi
-    if echo "$sanitized" | grep -qEi 'instruksi sistem'; then
-        prompt_leaked=true
-    fi
-    if echo "$sanitized" | grep -qEi 'system prompt'; then
-        prompt_leaked=true
-    fi
-    if echo "$sanitized" | grep -qEi 'saya adalah AI'; then
-        prompt_leaked=true
-    fi
+issues = []
+sanitized = text
 
-    if [ "$prompt_leaked" = true ]; then
-        issues=$(echo "$issues" | sed 's/\]$//')
-        if [ "$issues" != "[" ]; then
-            issues="${issues},"
-        fi
-        issues="${issues}\"Potensi kebocoran system prompt terdeteksi\"]"
-        sanitized=$(echo "$sanitized" | sed -E 's/[Yy]ou are an? (AI|assistant)/'"$REDACTION"'/g')
-        sanitized=$(echo "$sanitized" | sed -E 's/[Yy]our role is/'"$REDACTION"'/g')
-        sanitized=$(echo "$sanitized" | sed -E 's/[Ii]nstruksi [Ss]istem/'"$REDACTION"'/g')
-        sanitized=$(echo "$sanitized" | sed -E 's/[Ss]ystem [Pp]rompt/'"$REDACTION"'/g')
-        sanitized=$(echo "$sanitized" | sed -E 's/[Ss]aya adalah AI/'"$REDACTION"'/g')
-    fi
+# Check for email patterns
+email_re = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+if email_re.search(sanitized):
+    issues.append("Email terdeteksi dalam output")
+    sanitized = email_re.sub(redaction, sanitized)
 
-    local valid="true"
-    if [ "$issues" != "[]" ]; then
-        valid="false"
-    fi
+# Check for Indonesian phone patterns (08xx, +62xx, 62xx)
+phone_re = re.compile(r"(\+62|62|0)8[1-9][0-9]{6,10}")
+if phone_re.search(sanitized):
+    issues.append("Nomor telepon terdeteksi dalam output")
+    sanitized = phone_re.sub(redaction, sanitized)
 
-    # Escape the sanitized output for JSON
-    sanitized=$(echo "$sanitized" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+# Check for system prompt leak patterns
+prompt_leaked = False
+prompt_patterns = [
+    (re.compile(r"you are an? (AI|assistant)", re.IGNORECASE), True),
+    (re.compile(r"your role is", re.IGNORECASE), True),
+    (re.compile(r"instruksi sistem", re.IGNORECASE), True),
+    (re.compile(r"system prompt", re.IGNORECASE), True),
+    (re.compile(r"saya adalah AI", re.IGNORECASE), True),
+]
 
-    echo "{\"valid\": $valid, \"issues\": $issues, \"sanitized_output\": \"$sanitized\"}"
+for pattern, _ in prompt_patterns:
+    if pattern.search(sanitized):
+        prompt_leaked = True
+
+if prompt_leaked:
+    issues.append("Potensi kebocoran system prompt terdeteksi")
+    sanitized = re.sub(r"[Yy]ou are an? (AI|assistant)", redaction, sanitized)
+    sanitized = re.sub(r"[Yy]our role is", redaction, sanitized)
+    sanitized = re.sub(r"[Ii]nstruksi [Ss]istem", redaction, sanitized)
+    sanitized = re.sub(r"[Ss]ystem [Pp]rompt", redaction, sanitized)
+    sanitized = re.sub(r"[Ss]aya adalah AI", redaction, sanitized)
+
+valid = len(issues) == 0
+
+result = {
+    "valid": valid,
+    "issues": issues,
+    "sanitized_output": sanitized
+}
+print(json.dumps(result, ensure_ascii=False))
+' "$text" "$REDACTION"
 }
 
 # Run self-tests
@@ -207,6 +198,16 @@ run_tests() {
     else
         failed=$((failed + 1))
         echo "  FAIL: Should detect 'your role is'"
+    fi
+
+    # Test 11: Multiline content with special characters
+    result=$(validate_output 'Line 1 with "quotes" and
+Line 2 with backslash \ and $pecial chars')
+    if echo "$result" | python3 -c 'import json,sys; json.loads(sys.stdin.read()); print("valid_json")' 2>/dev/null | grep -q 'valid_json'; then
+        passed=$((passed + 1))
+    else
+        failed=$((failed + 1))
+        echo "  FAIL: Should produce valid JSON for special characters"
     fi
 
     local total=$((passed + failed))

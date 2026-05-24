@@ -48,14 +48,14 @@ export function isPolyglotAvailable(): { python: boolean; bash: boolean } {
   let bash = false;
 
   try {
-    execSync("python3 --version", { stdio: "pipe" });
+    execSync("python3 --version", { stdio: "pipe", timeout: 5000 });
     python = true;
   } catch {
     // python3 not available
   }
 
   try {
-    execSync("bash --version", { stdio: "pipe" });
+    execSync("bash --version", { stdio: "pipe", timeout: 5000 });
     bash = true;
   } catch {
     // bash not available
@@ -78,6 +78,7 @@ export function runGuardInput(
       input: payload,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
+      timeout: 5000,
     });
 
     const parsed = JSON.parse(result);
@@ -110,6 +111,7 @@ export function runGuardOutput(
       input: output,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
+      timeout: 5000,
     });
 
     const parsed = JSON.parse(result);
@@ -138,6 +140,7 @@ export function runKnowledgeAudit(content: string): AuditResult {
       input: payload,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
+      timeout: 5000,
     });
 
     const parsed = JSON.parse(result);
@@ -157,12 +160,15 @@ export function runKnowledgeAudit(content: string): AuditResult {
 /**
  * Run skill/file security scan using Shell scan-skill.sh script.
  * Returns null on error (no TypeScript fallback for this functionality).
+ * File path is passed via SCAN_TARGET env var to prevent command injection.
  */
 export function runSkillScan(filePath: string): SkillScanResult | null {
   try {
-    const result = execSync(`bash "${SCAN_SKILL_SCRIPT}" "${filePath}"`, {
+    const result = execSync(`bash "${SCAN_SKILL_SCRIPT}"`, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
+      timeout: 5000,
+      env: { ...process.env, SCAN_TARGET: filePath },
     });
 
     const parsed = JSON.parse(result);

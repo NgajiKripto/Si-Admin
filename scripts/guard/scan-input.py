@@ -4,6 +4,10 @@
 Ports the logic from src/lib/agent-guard/input-sanitizer.ts to Python.
 Uses only stdlib - no external dependencies required.
 
+Policy documentation: scripts/guard/policies/blocked-patterns.yml
+(YAML files are human-readable specifications; this script contains
+the canonical runtime patterns. Sync manually when updating.)
+
 Usage:
   echo '{"input": "text", "blocked_patterns": []}' | python3 scan-input.py
   python3 scan-input.py --input "text to scan"
