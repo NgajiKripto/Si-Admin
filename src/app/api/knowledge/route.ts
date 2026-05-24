@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auditKnowledgeContent } from "@/lib/agent-guard/knowledge-auditor";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -88,6 +89,18 @@ export async function POST(request: NextRequest) {
     if (!validCategories.includes(category)) {
       return NextResponse.json(
         { error: "Kategori tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    // Audit content for prompt injection patterns
+    const auditResult = auditKnowledgeContent(content);
+    if (!auditResult.safe) {
+      return NextResponse.json(
+        {
+          error: "Konten mengandung pola berbahaya",
+          issues: auditResult.issues,
+        },
         { status: 400 }
       );
     }

@@ -124,6 +124,29 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    // Validate readOnlyMode - must be boolean
+    if (body.readOnlyMode !== undefined) {
+      if (typeof body.readOnlyMode !== "boolean") {
+        errors.push("readOnlyMode harus berupa boolean");
+      } else {
+        data.readOnlyMode = body.readOnlyMode;
+      }
+    }
+
+    // Validate allowedActions - must be valid JSON array of strings
+    if (body.allowedActions !== undefined) {
+      try {
+        const parsed = JSON.parse(body.allowedActions);
+        if (!Array.isArray(parsed) || !parsed.every((item: unknown) => typeof item === "string")) {
+          errors.push("allowedActions harus berupa JSON array of strings");
+        } else {
+          data.allowedActions = body.allowedActions;
+        }
+      } catch {
+        errors.push("allowedActions harus berupa JSON yang valid");
+      }
+    }
+
     // Return validation errors if any
     if (errors.length > 0) {
       return NextResponse.json(

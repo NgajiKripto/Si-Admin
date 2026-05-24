@@ -43,6 +43,8 @@ export async function exampleChatHandler(userMessage: string) {
     blockedOutputPatterns: JSON.parse(dbConfig.blockedOutputPatterns),
     responseFormat: dbConfig.responseFormat,
     systemPromptHash: dbConfig.systemPromptHash,
+    readOnlyMode: dbConfig.readOnlyMode,
+    allowedActions: JSON.parse(dbConfig.allowedActions),
   };
 
   // Langkah 2: Jika guard tidak aktif, lewati pengecekan
