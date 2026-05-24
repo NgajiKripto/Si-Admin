@@ -33,6 +33,15 @@ export { ACTION_TYPES, isActionAllowed } from "./action-permissions";
 export type { AuditResult } from "./knowledge-auditor";
 export { auditKnowledgeContent } from "./knowledge-auditor";
 
+export type { SkillScanResult } from "./runner";
+export {
+  runGuardInput,
+  runGuardOutput,
+  runKnowledgeAudit,
+  runSkillScan,
+  isPolyglotAvailable,
+} from "./runner";
+
 export interface GuardConfig {
   id: string;
   isEnabled: boolean;

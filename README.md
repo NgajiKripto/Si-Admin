@@ -158,16 +158,63 @@ Halaman utama menampilkan ringkasan aktivitas customer service: total percakapan
 
 ### Keamanan Agent (Agent Guard)
 
-| Fitur | Deskripsi |
-|:------|:----------|
-| Multi-Layer Defense | Sistem pertahanan berlapis untuk melindungi agent AI |
-| Input Sanitization | Deteksi dan pembersihan pola injeksi termasuk zero-width characters |
-| Scope Enforcement | Pembatasan topik percakapan sesuai konfigurasi |
-| Response Limiting | Pembatasan panjang dan token respons agent |
-| Output Validation | Validasi output untuk mencegah kebocoran informasi sensitif |
-| Action-Level Permissions | Kontrol granular aksi yang boleh dilakukan agent |
-| Knowledge Audit | Pemeriksaan konten knowledge base terhadap pola injeksi |
-| Read-Only Mode | Mode darurat untuk memblokir semua aksi tulis agent |
+| Fitur | Layer | Deskripsi |
+|:------|:------|:----------|
+| Input Sanitization | Python + TypeScript | Deteksi dan pembersihan pola injeksi termasuk zero-width characters |
+| Scope Enforcement | TypeScript | Pembatasan topik percakapan sesuai konfigurasi |
+| Response Limiting | TypeScript | Pembatasan panjang dan token respons agent |
+| Output Validation | Shell + TypeScript | Validasi output untuk mencegah kebocoran informasi sensitif |
+| Action-Level Permissions | TypeScript + YAML | Kontrol granular aksi yang boleh dilakukan agent |
+| Knowledge Audit | Python + TypeScript | Pemeriksaan konten knowledge base terhadap pola injeksi |
+| Skill/File Scanning | Shell | Pemindaian file skill/knowledge terhadap pola berbahaya |
+| Declarative Policies | YAML | Konfigurasi kebijakan keamanan dalam format deklaratif |
+| Read-Only Mode | TypeScript | Mode darurat untuk memblokir semua aksi tulis agent |
+| Polyglot Fallback | TypeScript | Fallback otomatis ke TS jika Python/Shell tidak tersedia |
+
+### Arsitektur Agent Guard (Polyglot)
+
+```
+Input                                                           Output
+  |                                                               ^
+  v                                                               |
++---------------------------+    +-------------+    +-----------------------------+
+| Python scan-input.py      |    | TypeScript  |    | Shell validate-output.sh    |
+| (Pattern Analysis)        |--->| Scope Check |--->| (Output Validation)         |
++---------------------------+    | + Limiting  |    +-----------------------------+
+                                 +------+------+
+                                        |
+                                        v
+                                 +-------------+
+                                 |     LLM     |
+                                 +-------------+
+```
+
+**Layer-layer keamanan:**
+
+| Layer | Bahasa | Fungsi |
+|:------|:-------|:-------|
+| Pattern Analysis | Python | Analisis pola injeksi, zero-width chars, delimiter injection |
+| File Scanning | Shell (Bash) | Pemindaian file untuk shell injection, secret exfiltration, path traversal |
+| Declarative Policies | YAML | Konfigurasi blocked patterns, allowed topics, action permissions, output rules |
+| Orchestration + Fallback | TypeScript | Orkestrasi semua layer, scope check, response limiting, dan fallback otomatis |
+
+**Penggunaan standalone (CLI/CI):**
+
+```bash
+# Scan input
+echo '{"input": "test message"}' | python3 scripts/guard/scan-input.py
+
+# Scan skill file
+bash scripts/guard/scan-skill.sh path/to/file.md
+
+# Validate output
+echo "agent response text" | bash scripts/guard/validate-output.sh
+
+# Audit knowledge
+echo '{"content": "knowledge entry"}' | python3 scripts/guard/audit-knowledge.py
+```
+
+> **Fallback:** Jika Python/Shell tidak tersedia, sistem otomatis menggunakan implementasi TypeScript sebagai fallback.
 
 ---
 
