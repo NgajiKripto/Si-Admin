@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement the agent-guard module library, Prisma schema model, API route, and dashboard UI. This is the core feature that adds multi-layer defense for the AI agent including input sanitization, scope enforcement, response limiting, and output validation.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add AgentGuardConfig model to prisma/schema.prisma. The model should store: id (cuid), isEnabled (Boolean default true), maxResponseLength (Int default 500), maxResponseTokens (Int default 200), allowedTopics (String - JSON serialized array of allowed topic strings, default Indonesian CS topics like produk, harga, pengiriman, pembayaran, keluhan, retur, promo, jam operasional, stok), blockedPatterns (String - JSON serialized array of regex patterns to detect prompt injection), blockedOutputPatterns (String - JSON serialized array of patterns to block in output like system prompt leaks), responseFormat (String default 'text' - one of 'text', 'structured'), systemPromptHash (String nullable - hash of system prompt for leak detection), createdAt, updatedAt. Run npx prisma generate and npx prisma db push after schema change.",
     "Create src/lib/agent-guard/input-sanitizer.ts: Export a function sanitizeInput(input: string, config: GuardConfig): SanitizeResult. It should check for common prompt injection patterns like 'ignore previous instructions', 'you are now', 'system:', 'forget everything', 'jailbreak', role-switching attempts, and custom patterns from config.blockedPatterns. Return { safe: boolean, reason?: string, sanitizedInput: string }. Include Indonesian-language injection patterns too (e.g., 'abaikan instruksi', 'lupakan semua').",
@@ -35,5 +35,5 @@
     "Run npm run lint - exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All steps implemented successfully. Prisma schema updated with AgentGuardConfig model, prisma generate and db push both succeeded. Created 6 agent-guard library files (input-sanitizer, scope-classifier, response-limiter, output-validator, index, example-usage), 1 API route, 1 UI component, and updated the settings page with a new tab. Build passes with Next.js 16.2.6 Turbopack. Lint passes with 0 errors (2 pre-existing warnings in chat components unrelated to this feature). Had to inline fetchConfig inside useEffect to satisfy react-hooks/immutability lint rule."
 }
