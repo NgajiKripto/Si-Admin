@@ -26,7 +26,7 @@ const INJECTION_PATTERNS: { pattern: RegExp; label: string }[] = [
     label: "Persona swap: 'act as'",
   },
   {
-    pattern: /system\s*:/i,
+    pattern: /^\s*system\s*:/im,
     label: "System prompt fragment: 'system:'",
   },
   {
