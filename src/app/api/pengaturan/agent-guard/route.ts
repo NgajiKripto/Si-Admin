@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ACTION_TYPES } from "@/lib/agent-guard/action-permissions";
 
 export async function GET() {
   try {
@@ -121,6 +122,35 @@ export async function PATCH(request: NextRequest) {
         errors.push("systemPromptHash harus berupa string atau null");
       } else {
         data.systemPromptHash = body.systemPromptHash;
+      }
+    }
+
+    // Validate readOnlyMode - must be boolean
+    if (body.readOnlyMode !== undefined) {
+      if (typeof body.readOnlyMode !== "boolean") {
+        errors.push("readOnlyMode harus berupa boolean");
+      } else {
+        data.readOnlyMode = body.readOnlyMode;
+      }
+    }
+
+    // Validate allowedActions - must be valid JSON array of strings
+    if (body.allowedActions !== undefined) {
+      try {
+        const parsed = JSON.parse(body.allowedActions);
+        if (!Array.isArray(parsed) || !parsed.every((item: unknown) => typeof item === "string")) {
+          errors.push("allowedActions harus berupa JSON array of strings");
+        } else {
+          const validActions = ACTION_TYPES as readonly string[];
+          const invalidActions = parsed.filter((item: string) => !validActions.includes(item));
+          if (invalidActions.length > 0) {
+            errors.push(`allowedActions mengandung aksi tidak valid: ${invalidActions.join(", ")}`);
+          } else {
+            data.allowedActions = body.allowedActions;
+          }
+        }
+      } catch {
+        errors.push("allowedActions harus berupa JSON yang valid");
       }
     }
 

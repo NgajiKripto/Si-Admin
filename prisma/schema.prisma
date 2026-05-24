@@ -220,6 +220,8 @@ model AgentGuardConfig {
   blockedOutputPatterns String   @default("[\"system prompt\",\"instruksi sistem\",\"you are an AI\",\"saya adalah AI\"]")
   responseFormat        String   @default("text")
   systemPromptHash      String?
+  readOnlyMode          Boolean  @default(false)
+  allowedActions        String   @default("[\"SEND_MESSAGE\",\"CREATE_FOLLOWUP\",\"UPDATE_STOCK\",\"RECORD_FEEDBACK\",\"SEND_FEEDBACK_TEMPLATE\"]")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

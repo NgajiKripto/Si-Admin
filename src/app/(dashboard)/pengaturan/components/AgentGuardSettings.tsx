@@ -26,6 +26,8 @@ interface AgentGuardConfig {
   blockedOutputPatterns: string;
   responseFormat: string;
   systemPromptHash: string | null;
+  readOnlyMode: boolean;
+  allowedActions: string;
 }
 
 export default function AgentGuardSettings() {
@@ -44,6 +46,14 @@ export default function AgentGuardSettings() {
     []
   );
   const [responseFormat, setResponseFormat] = useState("text");
+  const [readOnlyMode, setReadOnlyMode] = useState(false);
+  const [allowedActions, setAllowedActions] = useState<string[]>([
+    "SEND_MESSAGE",
+    "CREATE_FOLLOWUP",
+    "UPDATE_STOCK",
+    "RECORD_FEEDBACK",
+    "SEND_FEEDBACK_TEMPLATE",
+  ]);
 
   // Input fields for adding new items
   const [newTopic, setNewTopic] = useState("");
@@ -64,6 +74,8 @@ export default function AgentGuardSettings() {
           setBlockedPatterns(JSON.parse(data.blockedPatterns));
           setBlockedOutputPatterns(JSON.parse(data.blockedOutputPatterns));
           setResponseFormat(data.responseFormat);
+          setReadOnlyMode(data.readOnlyMode);
+          setAllowedActions(JSON.parse(data.allowedActions));
         }
       } catch (error) {
         console.error("Error fetching guard config:", error);
@@ -90,6 +102,8 @@ export default function AgentGuardSettings() {
           blockedPatterns: JSON.stringify(blockedPatterns),
           blockedOutputPatterns: JSON.stringify(blockedOutputPatterns),
           responseFormat,
+          readOnlyMode,
+          allowedActions: JSON.stringify(allowedActions),
         }),
       });
       if (res.ok) {
@@ -167,6 +181,70 @@ export default function AgentGuardSettings() {
           <p className="text-xs text-muted-foreground mt-2">
             Aktifkan atau nonaktifkan seluruh sistem keamanan agent.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Read-Only Mode */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Mode Read-Only</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={readOnlyMode}
+              onCheckedChange={setReadOnlyMode}
+            />
+            <Badge variant={readOnlyMode ? "destructive" : "secondary"}>
+              {readOnlyMode ? "Read-Only Aktif" : "Normal"}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Jika aktif, agent tidak dapat melakukan aksi tulis (kirim pesan,
+            buat follow-up, update stok, dll). Berguna saat maintenance.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Action Permissions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Izin Aksi Agent</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Pilih aksi yang diizinkan untuk agent. Jika Mode Read-Only aktif,
+            semua aksi tulis akan diblokir.
+          </p>
+          <div className="space-y-3">
+            {[
+              { key: "SEND_MESSAGE", label: "Kirim Pesan" },
+              { key: "CREATE_FOLLOWUP", label: "Buat Follow-Up" },
+              { key: "UPDATE_STOCK", label: "Update Stok" },
+              { key: "RECORD_FEEDBACK", label: "Catat Feedback" },
+              { key: "SEND_FEEDBACK_TEMPLATE", label: "Kirim Template Feedback" },
+            ].map((action) => (
+              <div key={action.key} className="flex items-center gap-3">
+                <Switch
+                  checked={allowedActions.includes(action.key)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setAllowedActions([...allowedActions, action.key]);
+                    } else {
+                      setAllowedActions(
+                        allowedActions.filter((a) => a !== action.key)
+                      );
+                    }
+                  }}
+                  disabled={readOnlyMode}
+                />
+                <span className="text-sm">{action.label}</span>
+                <Badge variant="outline" className="text-xs">
+                  {action.key}
+                </Badge>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

@@ -1,0 +1,37 @@
+# Izin aksi - Agent Guard Policies
+# Konfigurasi default untuk setiap jenis aksi agent
+#
+# Human-readable specifications - canonical patterns are in the Python/Shell/TypeScript
+# implementations. Sync manually when updating.
+#
+# Runtime implementations:
+#   - src/lib/agent-guard/action-permissions.ts (ACTION_TYPES, isActionAllowed)
+actions:
+  SEND_MESSAGE:
+    description: "Mengirim pesan balasan ke pelanggan"
+    default_allowed: true
+    read_only_mode: false
+
+  CREATE_FOLLOWUP:
+    description: "Membuat tugas follow-up untuk tim"
+    default_allowed: true
+    read_only_mode: false
+
+  UPDATE_STOCK:
+    description: "Memperbarui informasi stok produk"
+    default_allowed: true
+    read_only_mode: false
+
+  RECORD_FEEDBACK:
+    description: "Mencatat feedback pelanggan"
+    default_allowed: true
+    read_only_mode: false
+
+  SEND_FEEDBACK_TEMPLATE:
+    description: "Mengirim template permintaan feedback"
+    default_allowed: true
+    read_only_mode: false
+
+# Ketika read_only_mode aktif, semua aksi di atas diblokir
+# Tidak ada aksi yang diizinkan dalam mode read-only
+read_only_allowed_actions: []
