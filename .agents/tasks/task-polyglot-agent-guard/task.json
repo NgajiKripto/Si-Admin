@@ -9,6 +9,6 @@
     "tests": "pass",
     "test_quality": "pass",
     "docker_build": "skipped",
-    "summary": "npm run build passes. All 4 script self-tests pass (21+18+11+12=62 tests). Review v1 fixes applied: command injection fixed via SCAN_TARGET env var, execSync timeouts added (5000ms), shell JSON construction uses python3, YAML policy headers added, multiline handling fixed, false positive notes added."
+    "summary": "npm run build passes. All script self-tests pass (validate-output.sh: 17 tests). Review v2 fixes applied: (1) runGuardOutput now forwards blockedOutputPatterns and systemPromptHash as JSON payload via stdin to validate-output.sh, matching runGuardInput pattern. (2) validate-output.sh parses JSON input with 'output' key for structured mode, plain text for backward compat. (3) Python3 block checks custom blocked patterns and system prompt hash. (4) Text piped to python3 via stdin instead of argv to avoid ARG_MAX on large inputs. Tested with 200K char input successfully."
   }
 }
