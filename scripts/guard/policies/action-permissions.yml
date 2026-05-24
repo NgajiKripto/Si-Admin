@@ -1,0 +1,29 @@
+# Konfigurasi permission aksi agent
+# Digunakan sebagai referensi policy yang human-readable
+
+actions:
+  SEND_MESSAGE:
+    description: "Kirim pesan ke customer"
+    risk_level: low
+    default_enabled: true
+  CREATE_FOLLOWUP:
+    description: "Buat jadwal follow-up"
+    risk_level: low
+    default_enabled: true
+  UPDATE_STOCK:
+    description: "Update data stok"
+    risk_level: medium
+    default_enabled: true
+  RECORD_FEEDBACK:
+    description: "Catat feedback customer"
+    risk_level: low
+    default_enabled: true
+  SEND_FEEDBACK_TEMPLATE:
+    description: "Kirim template feedback"
+    risk_level: low
+    default_enabled: true
+
+read_only_mode:
+  description: "Mode darurat - blokir semua aksi tulis"
+  default: false
+  effect: "Semua aksi di atas diblokir saat aktif"
