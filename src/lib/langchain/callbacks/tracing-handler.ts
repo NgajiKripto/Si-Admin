@@ -39,14 +39,16 @@ export class TracingHandler extends BaseCallbackHandler {
       // is identified as a trace by stepName='TRACE'. This is acceptable for SQLite
       // where column types are flexible. Truncate to 100KB to stay within safe limits.
       const MAX_TRACE_SIZE = 100 * 1024; // 100KB
-      let traceJson = JSON.stringify(this.trace);
+      let traceData = [...this.trace];
+      let traceJson = JSON.stringify(traceData);
+      // Iteratively remove oldest events until the JSON fits within the size limit
+      while (traceJson.length > MAX_TRACE_SIZE && traceData.length > 1) {
+        traceData = traceData.slice(Math.ceil(traceData.length / 4));
+        traceJson = JSON.stringify(traceData);
+      }
       if (traceJson.length > MAX_TRACE_SIZE) {
-        // Keep the most recent events when truncating
-        const truncated = this.trace.slice(-Math.floor(this.trace.length / 2));
-        traceJson = JSON.stringify(truncated);
-        if (traceJson.length > MAX_TRACE_SIZE) {
-          traceJson = traceJson.substring(0, MAX_TRACE_SIZE);
-        }
+        // Last resort: store a summary marker
+        traceJson = JSON.stringify([{ type: "truncated", message: "Trace terlalu besar untuk disimpan", originalLength: this.trace.length }]);
       }
 
       await prisma.agentMetrics.create({

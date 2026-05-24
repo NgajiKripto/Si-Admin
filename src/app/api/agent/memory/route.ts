@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const VALID_TIERS = ["WORKING", "EPISODIC", "SEMANTIC", "PROCEDURAL"] as const;
+const ARCHIVED_TIERS = ["WORKING_ARCHIVED", "EPISODIC_ARCHIVED", "SEMANTIC_ARCHIVED", "PROCEDURAL_ARCHIVED"] as const;
+const ALL_VALID_TIERS = [...VALID_TIERS, ...ARCHIVED_TIERS] as const;
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const tier = searchParams.get("tier") || "";
@@ -8,6 +12,14 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "50");
 
   try {
+    // Validate tier parameter if provided
+    if (tier && !ALL_VALID_TIERS.includes(tier as typeof ALL_VALID_TIERS[number])) {
+      return NextResponse.json(
+        { error: "Tier tidak valid" },
+        { status: 400 }
+      );
+    }
+
     const where = {
       // Exclude archived tiers from normal queries
       tier: tier ? { equals: tier } : { not: { contains: "_ARCHIVED" } },
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validTiers = ["WORKING", "EPISODIC", "SEMANTIC", "PROCEDURAL"];
+    const validTiers: readonly string[] = VALID_TIERS;
     if (!validTiers.includes(tier)) {
       return NextResponse.json(
         { error: "Tier tidak valid" },

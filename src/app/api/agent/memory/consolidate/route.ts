@@ -7,6 +7,12 @@ import {
 } from "@/lib/langchain/consolidation";
 import { storeEmbedding } from "@/lib/langchain/embeddings-service";
 
+const ARCHIVED_TIERS = {
+  WORKING: "WORKING_ARCHIVED",
+  EPISODIC: "EPISODIC_ARCHIVED",
+  SEMANTIC: "SEMANTIC_ARCHIVED",
+} as const;
+
 export async function POST() {
   try {
     const now = new Date();
@@ -53,7 +59,7 @@ export async function POST() {
           id: { in: oldWorkingMemories.map((m) => m.id) },
         },
         data: {
-          tier: "WORKING_ARCHIVED",
+          tier: ARCHIVED_TIERS.WORKING,
         },
       });
 
@@ -102,7 +108,7 @@ export async function POST() {
           id: { in: oldEpisodicMemories.map((m) => m.id) },
         },
         data: {
-          tier: "EPISODIC_ARCHIVED",
+          tier: ARCHIVED_TIERS.EPISODIC,
         },
       });
 
@@ -174,7 +180,7 @@ export async function POST() {
             id: { in: promotedSemanticIds },
           },
           data: {
-            tier: "SEMANTIC_ARCHIVED",
+            tier: ARCHIVED_TIERS.SEMANTIC,
           },
         });
       }

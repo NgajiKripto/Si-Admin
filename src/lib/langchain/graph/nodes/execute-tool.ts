@@ -1,10 +1,8 @@
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage } from "@langchain/core/messages";
 import { prisma } from "@/lib/prisma";
-import { getAgentTools } from "@/lib/langchain/tools";
+import { getAgentTools, createGuardedTools } from "@/lib/langchain/tools";
 import type { AgentStateType } from "../state";
-
-const toolNode = new ToolNode(getAgentTools());
 
 /**
  * Defines which actions require human approval.
@@ -74,6 +72,11 @@ export async function executeToolNode(
       }
     }
   }
+
+  // Create ToolNode dynamically with guard enforcement from state
+  const guardConfig = state.guardConfig;
+  const tools = guardConfig ? createGuardedTools(getAgentTools(), guardConfig) : getAgentTools();
+  const toolNode = new ToolNode(tools);
 
   const result = await toolNode.invoke(state);
 
