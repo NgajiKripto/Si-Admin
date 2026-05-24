@@ -107,8 +107,13 @@ export function runGuardOutput(
   systemPromptHash?: string | null
 ): ValidationResult {
   try {
+    const payload = JSON.stringify({
+      output,
+      blocked_output_patterns: blockedOutputPatterns,
+      system_prompt_hash: systemPromptHash,
+    });
     const result = execSync(`bash "${VALIDATE_OUTPUT_SCRIPT}"`, {
-      input: output,
+      input: payload,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
       timeout: 5000,
