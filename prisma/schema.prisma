@@ -41,6 +41,7 @@ model Customer {
   conversations Conversation[]
   followUps     FollowUp[]
   feedbacks     Feedback[]
+  agentSessions AgentSession[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -224,4 +225,56 @@ model AgentGuardConfig {
   allowedActions        String   @default("[\"SEND_MESSAGE\",\"CREATE_FOLLOWUP\",\"UPDATE_STOCK\",\"RECORD_FEEDBACK\",\"SEND_FEEDBACK_TEMPLATE\"]")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model AgentMetrics {
+  id               String   @id @default(cuid())
+  requestId        String
+  sessionId        String?
+  stepName         String
+  tokensUsed       Int      @default(0)
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  latencyMs        Int      @default(0)
+  toolName         String?
+  toolSuccess      Boolean?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+}
+
+/// sourceType field uses: "KNOWLEDGE" | "MEMORY"
+model VectorEmbedding {
+  id         String   @id @default(cuid())
+  sourceType String
+  sourceId   String
+  embedding  String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+/// status field uses: "ACTIVE" | "COMPLETED" | "TIMEOUT"
+model AgentSession {
+  id             String    @id @default(cuid())
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  status         String    @default("ACTIVE")
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  totalTokens    Int       @default(0)
+  totalLatencyMs Int       @default(0)
+  metadata       String?
+}
+
+/// status field uses: "PENDING" | "APPROVED" | "REJECTED"
+model HumanApprovalQueue {
+  id            String    @id @default(cuid())
+  sessionId     String
+  actionType    String
+  actionPayload String
+  status        String    @default("PENDING")
+  requestedAt   DateTime  @default(now())
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  notes         String?
 }

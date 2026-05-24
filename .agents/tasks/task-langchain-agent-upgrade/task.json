@@ -1,0 +1,7 @@
+{
+  "task_id": "task-langchain-agent-upgrade",
+  "task_description": "Comprehensive AI agent upgrade for Si-Admin using LangChain.js and LangGraph.js. Implements LLM integration, RAG pipeline, tool calling, StateGraph orchestration, vector embeddings, hybrid search, memory consolidation, multi-agent system, streaming, human-in-the-loop, and observability.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005"],
+  "blocked_reason": null
+}

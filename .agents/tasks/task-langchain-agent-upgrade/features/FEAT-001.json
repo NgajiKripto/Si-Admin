@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Install all LangChain/LangGraph dependencies, add new Prisma models (AgentMetrics, VectorEmbedding, AgentSession, HumanApprovalQueue), update .env with LLM config variables, and create the foundational LLM service layer at src/lib/langchain/ with provider configuration, prompt templates, and embedding utilities.",
+  "status": "in_progress",
+  "steps": [
+    "Install npm packages: @langchain/core @langchain/openai @langchain/langgraph langchain zod uuid. Add @types/uuid as devDependency.",
+    "Update .env to add: OPENAI_API_KEY=your-key-here, OPENAI_MODEL=gpt-4o-mini, OPENAI_EMBEDDING_MODEL=text-embedding-3-small, AGENT_MAX_ITERATIONS=10, AGENT_TEMPERATURE=0.3",
+    "Add new models to prisma/schema.prisma: (1) AgentMetrics with fields: id, requestId, sessionId, stepName, tokensUsed, promptTokens, completionTokens, latencyMs, toolName, toolSuccess, errorMessage, createdAt. (2) VectorEmbedding with fields: id, sourceType (KNOWLEDGE|MEMORY), sourceId, embedding (Text - JSON array of floats), content, createdAt, updatedAt. (3) AgentSession with fields: id, customerId (optional), status (ACTIVE|COMPLETED|TIMEOUT), startedAt, endedAt, totalTokens, totalLatencyMs, metadata. (4) HumanApprovalQueue with fields: id, sessionId, actionType, actionPayload (JSON string), status (PENDING|APPROVED|REJECTED), requestedAt, resolvedAt, resolvedBy, notes.",
+    "Run npx prisma generate && npx prisma db push to apply schema changes.",
+    "Create src/lib/langchain/config.ts - Export LLM configuration: getOpenAIConfig() returns model, apiKey, temperature from env vars with fallbacks. Export getEmbeddingConfig() for embedding model settings.",
+    "Create src/lib/langchain/llm.ts - Create and export singleton ChatOpenAI instance using config. Include factory function createLLM(overrides?) for custom configurations. Handle missing API key gracefully with descriptive error.",
+    "Create src/lib/langchain/embeddings.ts - Create and export OpenAIEmbeddings instance. Add utility function generateEmbedding(text: string): Promise<number[]> and generateEmbeddings(texts: string[]): Promise<number[][]>. Add cosineSimilarity(a: number[], b: number[]) utility function.",
+    "Create src/lib/langchain/prompts.ts - Define system prompt template for Indonesian CS agent persona (professional, helpful, uses knowledge base). Define RAG prompt template that includes {context} and {question} variables. Define tool-calling system prompt. All prompts in Bahasa Indonesia.",
+    "Create src/lib/langchain/index.ts - Re-export all modules from config, llm, embeddings, prompts for clean imports.",
+    "Verify: run npx prisma generate && npm run build to confirm everything compiles."
+  ],
+  "acceptance_criteria": [
+    "All LangChain packages installed and resolvable in node_modules",
+    "Prisma schema has AgentMetrics, VectorEmbedding, AgentSession, HumanApprovalQueue models",
+    "npx prisma generate succeeds without errors",
+    "src/lib/langchain/ directory exists with config.ts, llm.ts, embeddings.ts, prompts.ts, index.ts",
+    "npm run build completes without TypeScript errors",
+    ".env contains OPENAI_API_KEY and related config variables"
+  ],
+  "verification": [
+    "npx prisma generate",
+    "npx prisma db push",
+    "npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
