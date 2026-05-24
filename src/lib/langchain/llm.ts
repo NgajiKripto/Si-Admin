@@ -1,6 +1,13 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { getOpenAIConfig } from "./config";
 
+/**
+ * Singleton ChatOpenAI instance. This is intentional for performance - it avoids
+ * creating new client instances on every request. The trade-off is that configuration
+ * changes (model, temperature, API key) require a process restart to take effect.
+ * This is standard practice for serverless/Next.js environments where the process
+ * lifecycle is managed by the platform.
+ */
 let llmInstance: ChatOpenAI | null = null;
 
 /**

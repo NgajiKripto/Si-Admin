@@ -7,10 +7,7 @@ import { routeQuery, type AgentRoute } from "./router";
 import { createCSAgent } from "./cs-agent";
 import { createStockAgent } from "./stock-agent";
 import { createFollowUpAgent } from "./followup-agent";
-
-const csAgent = createCSAgent();
-const stockAgent = createStockAgent();
-const followUpAgent = createFollowUpAgent();
+import { getOpenAIConfig } from "@/lib/langchain/config";
 
 async function routerNode(
   state: AgentStateType
@@ -44,9 +41,12 @@ function routeAfterRouter(
 async function csAgentNode(
   state: AgentStateType
 ): Promise<Partial<AgentStateType>> {
-  const result = await csAgent.invoke({
-    messages: state.messages,
-  });
+  const { maxIterations } = getOpenAIConfig();
+  const csAgent = createCSAgent(state.guardConfig);
+  const result = await csAgent.invoke(
+    { messages: state.messages },
+    { recursionLimit: maxIterations }
+  );
 
   const lastMessage = result.messages[result.messages.length - 1];
 
@@ -59,9 +59,12 @@ async function csAgentNode(
 async function stockAgentNode(
   state: AgentStateType
 ): Promise<Partial<AgentStateType>> {
-  const result = await stockAgent.invoke({
-    messages: state.messages,
-  });
+  const { maxIterations } = getOpenAIConfig();
+  const stockAgent = createStockAgent(state.guardConfig);
+  const result = await stockAgent.invoke(
+    { messages: state.messages },
+    { recursionLimit: maxIterations }
+  );
 
   const lastMessage = result.messages[result.messages.length - 1];
 
@@ -74,9 +77,12 @@ async function stockAgentNode(
 async function followupAgentNode(
   state: AgentStateType
 ): Promise<Partial<AgentStateType>> {
-  const result = await followUpAgent.invoke({
-    messages: state.messages,
-  });
+  const { maxIterations } = getOpenAIConfig();
+  const followUpAgent = createFollowUpAgent(state.guardConfig);
+  const result = await followUpAgent.invoke(
+    { messages: state.messages },
+    { recursionLimit: maxIterations }
+  );
 
   const lastMessage = result.messages[result.messages.length - 1];
 

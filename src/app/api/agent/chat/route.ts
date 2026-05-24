@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
 import { getAgentTools } from "@/lib/langchain/tools";
 import { createCallbacks } from "@/lib/langchain/callbacks";
+import { getOpenAIConfig } from "@/lib/langchain/config";
 
 export async function POST(request: NextRequest) {
   try {
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
         messages: [new HumanMessage(message)],
         sessionId: session.id,
       },
-      { callbacks }
+      { callbacks, recursionLimit: getOpenAIConfig().maxIterations }
     );
 
     const finalResponse =

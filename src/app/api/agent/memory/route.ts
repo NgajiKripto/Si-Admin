@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const where = {
-      ...(tier ? { tier } : {}),
+      // Exclude archived tiers from normal queries
+      tier: tier ? { equals: tier } : { not: { contains: "_ARCHIVED" } },
       ...(search
         ? {
             OR: [

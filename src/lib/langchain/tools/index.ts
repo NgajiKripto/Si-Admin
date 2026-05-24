@@ -4,6 +4,7 @@ import { createFollowUpTool } from "./create-follow-up";
 import { getCustomerHistoryTool } from "./get-customer-history";
 import { sendFeedbackTemplateTool } from "./send-feedback-template";
 import { updateStockTool } from "./update-stock";
+export { createGuardedTools } from "./guarded-tools";
 
 export {
   searchKnowledgeTool,

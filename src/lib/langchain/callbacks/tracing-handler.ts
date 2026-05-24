@@ -34,12 +34,27 @@ export class TracingHandler extends BaseCallbackHandler {
 
   async saveTrace(): Promise<void> {
     try {
+      // Pragmatic choice: We store the trace JSON in the `errorMessage` column
+      // because adding a dedicated column requires a schema migration. The field
+      // is identified as a trace by stepName='TRACE'. This is acceptable for SQLite
+      // where column types are flexible. Truncate to 100KB to stay within safe limits.
+      const MAX_TRACE_SIZE = 100 * 1024; // 100KB
+      let traceJson = JSON.stringify(this.trace);
+      if (traceJson.length > MAX_TRACE_SIZE) {
+        // Keep the most recent events when truncating
+        const truncated = this.trace.slice(-Math.floor(this.trace.length / 2));
+        traceJson = JSON.stringify(truncated);
+        if (traceJson.length > MAX_TRACE_SIZE) {
+          traceJson = traceJson.substring(0, MAX_TRACE_SIZE);
+        }
+      }
+
       await prisma.agentMetrics.create({
         data: {
           requestId: this.requestId,
           sessionId: this.sessionId,
           stepName: "TRACE",
-          errorMessage: JSON.stringify(this.trace),
+          errorMessage: traceJson,
         },
       });
     } catch (err) {

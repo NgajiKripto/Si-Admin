@@ -2,7 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAgentTools } from "@/lib/langchain/tools";
 
-export async function GET() {
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "dev-admin-token";
+
+function checkAuth(request: NextRequest): boolean {
+  const token = request.headers.get("x-admin-token");
+  return token === ADMIN_SECRET;
+}
+
+export async function GET(request: NextRequest) {
+  if (!checkAuth(request)) {
+    return NextResponse.json(
+      { error: "Unauthorized. Header 'x-admin-token' tidak valid." },
+      { status: 401 }
+    );
+  }
+
   try {
     const pendingApprovals = await prisma.humanApprovalQueue.findMany({
       where: { status: "PENDING" },
@@ -29,6 +43,13 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!checkAuth(request)) {
+    return NextResponse.json(
+      { error: "Unauthorized. Header 'x-admin-token' tidak valid." },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { id, action, notes, resolvedBy } = body;

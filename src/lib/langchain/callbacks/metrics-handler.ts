@@ -3,6 +3,15 @@ import type { Serialized } from "@langchain/core/load/serializable";
 import type { LLMResult } from "@langchain/core/outputs";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * MetricsHandler tracks token usage, latency, and tool execution results.
+ *
+ * Design trade-off: All database writes are fire-and-forget (non-blocking).
+ * This means metrics can be silently lost if a DB write fails. This is acceptable
+ * because metrics are non-critical observability data, and we prioritize not slowing
+ * down agent responses over guaranteed metric delivery. Errors are logged to console
+ * for operational awareness.
+ */
 export class MetricsHandler extends BaseCallbackHandler {
   name = "MetricsHandler";
 

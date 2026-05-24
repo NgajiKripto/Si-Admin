@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       }),
       prisma.agentMemory.findMany({
         where: {
+          tier: { not: { contains: "_ARCHIVED" } },
           OR: memoryOrConditions,
         },
         take: 100,

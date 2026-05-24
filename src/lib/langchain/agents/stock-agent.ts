@@ -3,7 +3,8 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage } from "@langchain/core/messages";
 import { SystemMessage } from "@langchain/core/messages";
 import { getLLM } from "@/lib/langchain/llm";
-import { checkStockTool, updateStockTool } from "@/lib/langchain/tools";
+import { checkStockTool, updateStockTool, createGuardedTools } from "@/lib/langchain/tools";
+import type { GuardConfig } from "@/lib/agent-guard";
 
 const STOCK_SYSTEM_PROMPT = `Anda adalah agen spesialis Manajemen Stok untuk bisnis kami.
 
@@ -22,38 +23,40 @@ Panduan:
 - Laporkan hasil perubahan stok dengan ringkas dan jelas`;
 
 const stockTools = [checkStockTool, updateStockTool];
-const toolNode = new ToolNode(stockTools);
 
 type StockStateType = typeof MessagesAnnotation.State;
 
-async function stockLLMNode(state: StockStateType): Promise<Partial<StockStateType>> {
-  const llm = getLLM();
-  const llmWithTools = llm.bindTools(stockTools);
+export function createStockAgent(guardConfig?: GuardConfig | null) {
+  const tools = guardConfig ? createGuardedTools(stockTools, guardConfig) : stockTools;
+  const toolNode = new ToolNode(tools);
 
-  const messages = [new SystemMessage(STOCK_SYSTEM_PROMPT), ...state.messages];
-  const response = await llmWithTools.invoke(messages);
+  async function stockLLMNode(state: StockStateType): Promise<Partial<StockStateType>> {
+    const llm = getLLM();
+    const llmWithTools = llm.bindTools(tools);
 
-  return { messages: [response] };
-}
+    const messages = [new SystemMessage(STOCK_SYSTEM_PROMPT), ...state.messages];
+    const response = await llmWithTools.invoke(messages);
 
-async function stockToolNode(state: StockStateType): Promise<Partial<StockStateType>> {
-  const result = await toolNode.invoke(state);
-  return { messages: result.messages };
-}
-
-function routeAfterLLM(state: StockStateType): "tools" | typeof END {
-  const lastMessage = state.messages[state.messages.length - 1];
-  if (
-    lastMessage instanceof AIMessage &&
-    lastMessage.tool_calls &&
-    lastMessage.tool_calls.length > 0
-  ) {
-    return "tools";
+    return { messages: [response] };
   }
-  return END;
-}
 
-export function createStockAgent() {
+  async function stockToolNode(state: StockStateType): Promise<Partial<StockStateType>> {
+    const result = await toolNode.invoke(state);
+    return { messages: result.messages };
+  }
+
+  function routeAfterLLM(state: StockStateType): "tools" | typeof END {
+    const lastMessage = state.messages[state.messages.length - 1];
+    if (
+      lastMessage instanceof AIMessage &&
+      lastMessage.tool_calls &&
+      lastMessage.tool_calls.length > 0
+    ) {
+      return "tools";
+    }
+    return END;
+  }
+
   const workflow = new StateGraph(MessagesAnnotation)
     .addNode("llm", stockLLMNode)
     .addNode("tools", stockToolNode)

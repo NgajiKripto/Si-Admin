@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-006",
+  "type": "fix",
+  "description": "Fix 9 issues found in the semantic review: double graph invocation, unbounded vector scan, unauthenticated approval, trace size, sub-agent iteration caps, fire-and-forget docs, LLM singleton docs, allowedActions enforcement, and memory hard-deletes.",
+  "status": "in_progress",
+  "steps": [
+    "Fix Issue 1: Remove double graph.invoke() in stream route, accumulate finalResponse from streamed events",
+    "Fix Issue 2: Add take limit to searchByVector Prisma query",
+    "Fix Issue 3: Add auth check to approval endpoint",
+    "Fix Issue 4: Truncate trace JSON and add comment documenting errorMessage usage",
+    "Fix Issue 5: Add recursionLimit to sub-agent and main graph invocations",
+    "Fix Issue 6: Add comment documenting fire-and-forget trade-off in metrics handler",
+    "Fix Issue 7: Add comment documenting singleton pattern in llm.ts",
+    "Fix Issue 8: Create guarded tools wrapper and use in sub-agents",
+    "Fix Issue 9: Archive memories instead of deleting them in consolidation"
+  ],
+  "acceptance_criteria": [
+    "Stream endpoint does not call graph.invoke() after graph.stream()",
+    "searchByVector limits Prisma query with take parameter",
+    "Approval endpoint requires x-admin-token header matching ADMIN_SECRET env var",
+    "Trace JSON is truncated to 100KB max with documentation comment",
+    "Sub-agents use recursionLimit from config",
+    "Metrics handler has documentation about fire-and-forget trade-off",
+    "LLM singleton has documentation about restart requirement",
+    "Sub-agent tools check allowedActions before execution",
+    "Memory consolidation archives instead of deleting source memories",
+    "npm run build completes without errors"
+  ],
+  "verification": [
+    "npm run build",
+    "npm run lint"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

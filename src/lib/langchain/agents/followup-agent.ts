@@ -6,7 +6,9 @@ import { getLLM } from "@/lib/langchain/llm";
 import {
   createFollowUpTool,
   getCustomerHistoryTool,
+  createGuardedTools,
 } from "@/lib/langchain/tools";
+import type { GuardConfig } from "@/lib/agent-guard";
 
 const FOLLOWUP_SYSTEM_PROMPT = `Anda adalah agen spesialis Tindak Lanjut (Follow-up) untuk bisnis kami.
 
@@ -25,42 +27,44 @@ Panduan:
 - Perhatikan hubungan jangka panjang dengan pelanggan`;
 
 const followupTools = [createFollowUpTool, getCustomerHistoryTool];
-const toolNode = new ToolNode(followupTools);
 
 type FollowupStateType = typeof MessagesAnnotation.State;
 
-async function followupLLMNode(
-  state: FollowupStateType
-): Promise<Partial<FollowupStateType>> {
-  const llm = getLLM();
-  const llmWithTools = llm.bindTools(followupTools);
+export function createFollowUpAgent(guardConfig?: GuardConfig | null) {
+  const tools = guardConfig ? createGuardedTools(followupTools, guardConfig) : followupTools;
+  const toolNode = new ToolNode(tools);
 
-  const messages = [new SystemMessage(FOLLOWUP_SYSTEM_PROMPT), ...state.messages];
-  const response = await llmWithTools.invoke(messages);
+  async function followupLLMNode(
+    state: FollowupStateType
+  ): Promise<Partial<FollowupStateType>> {
+    const llm = getLLM();
+    const llmWithTools = llm.bindTools(tools);
 
-  return { messages: [response] };
-}
+    const messages = [new SystemMessage(FOLLOWUP_SYSTEM_PROMPT), ...state.messages];
+    const response = await llmWithTools.invoke(messages);
 
-async function followupToolNode(
-  state: FollowupStateType
-): Promise<Partial<FollowupStateType>> {
-  const result = await toolNode.invoke(state);
-  return { messages: result.messages };
-}
-
-function routeAfterLLM(state: FollowupStateType): "tools" | typeof END {
-  const lastMessage = state.messages[state.messages.length - 1];
-  if (
-    lastMessage instanceof AIMessage &&
-    lastMessage.tool_calls &&
-    lastMessage.tool_calls.length > 0
-  ) {
-    return "tools";
+    return { messages: [response] };
   }
-  return END;
-}
 
-export function createFollowUpAgent() {
+  async function followupToolNode(
+    state: FollowupStateType
+  ): Promise<Partial<FollowupStateType>> {
+    const result = await toolNode.invoke(state);
+    return { messages: result.messages };
+  }
+
+  function routeAfterLLM(state: FollowupStateType): "tools" | typeof END {
+    const lastMessage = state.messages[state.messages.length - 1];
+    if (
+      lastMessage instanceof AIMessage &&
+      lastMessage.tool_calls &&
+      lastMessage.tool_calls.length > 0
+    ) {
+      return "tools";
+    }
+    return END;
+  }
+
   const workflow = new StateGraph(MessagesAnnotation)
     .addNode("llm", followupLLMNode)
     .addNode("tools", followupToolNode)

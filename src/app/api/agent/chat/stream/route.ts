@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
 import { createCallbacks } from "@/lib/langchain/callbacks";
+import { getOpenAIConfig } from "@/lib/langchain/config";
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -64,13 +65,14 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Stream graph execution events
+          // Stream graph execution events and accumulate finalResponse
+          let finalResponse = "";
           const eventStream = await graph.stream(
             {
               messages: [new HumanMessage(message)],
               sessionId: session.id,
             },
-            { streamMode: "updates", callbacks }
+            { streamMode: "updates", callbacks, recursionLimit: getOpenAIConfig().maxIterations }
           );
 
           for await (const event of eventStream) {
@@ -87,9 +89,10 @@ export async function POST(request: NextRequest) {
                 );
               }
 
-              // Emit final response tokens
+              // Accumulate finalResponse from stream events
               if (nodeOutput.finalResponse) {
-                const responseText = String(nodeOutput.finalResponse);
+                finalResponse = String(nodeOutput.finalResponse);
+                const responseText = finalResponse;
                 // Stream the response token by token (word by word)
                 const words = responseText.split(" ");
                 for (const word of words) {
@@ -103,18 +106,10 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Send done event
-          const result = await graph.invoke(
-            {
-              messages: [new HumanMessage(message)],
-              sessionId: session.id,
-            },
-            { callbacks }
-          );
-
-          const finalResponse =
-            result.finalResponse ||
-            "Maaf, saya tidak dapat memproses permintaan Anda saat ini.";
+          // Use accumulated finalResponse from stream (no second invocation needed)
+          if (!finalResponse) {
+            finalResponse = "Maaf, saya tidak dapat memproses permintaan Anda saat ini.";
+          }
 
           // Save trace and update session
           const metrics = metricsHandler.getAccumulatedMetrics();

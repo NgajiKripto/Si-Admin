@@ -47,10 +47,13 @@ export async function POST() {
         console.error("Failed to generate embedding for episodic memory:", err)
       );
 
-      // Delete consumed working memories after promotion
-      await prisma.agentMemory.deleteMany({
+      // Archive consumed working memories after promotion (preserve data)
+      await prisma.agentMemory.updateMany({
         where: {
           id: { in: oldWorkingMemories.map((m) => m.id) },
+        },
+        data: {
+          tier: "WORKING_ARCHIVED",
         },
       });
 
@@ -93,10 +96,13 @@ export async function POST() {
         }
       }
 
-      // Delete consumed episodic memories after promotion
-      await prisma.agentMemory.deleteMany({
+      // Archive consumed episodic memories after promotion (preserve data)
+      await prisma.agentMemory.updateMany({
         where: {
           id: { in: oldEpisodicMemories.map((m) => m.id) },
+        },
+        data: {
+          tier: "EPISODIC_ARCHIVED",
         },
       });
 
@@ -161,11 +167,14 @@ export async function POST() {
         semanticToProcedural = toPromote.length;
       }
 
-      // Delete consumed semantic memories after promotion
+      // Archive consumed semantic memories after promotion (preserve data)
       if (promotedSemanticIds.length > 0) {
-        await prisma.agentMemory.deleteMany({
+        await prisma.agentMemory.updateMany({
           where: {
             id: { in: promotedSemanticIds },
+          },
+          data: {
+            tier: "SEMANTIC_ARCHIVED",
           },
         });
       }

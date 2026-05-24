@@ -76,6 +76,10 @@ interface VectorSearchResult {
  * Search by vector similarity.
  * Generates embedding for query, loads VectorEmbedding records,
  * computes cosine similarity, returns top-N results.
+ *
+ * Note: This loads up to 1000 records into memory for similarity computation.
+ * This is suitable for moderate scale (< 100k embeddings). For production-scale
+ * deployments, use a dedicated vector database (e.g., Pinecone, Weaviate, pgvector).
  */
 export async function searchByVector(
   queryText: string,
@@ -84,9 +88,9 @@ export async function searchByVector(
 ): Promise<VectorSearchResult[]> {
   const queryEmbedding = await generateEmbedding(queryText);
 
-  // Load all embeddings (optionally filtered by sourceType)
+  // Load embeddings with a cap to prevent unbounded memory usage
   const where = sourceType ? { sourceType } : {};
-  const embeddings = await prisma.vectorEmbedding.findMany({ where });
+  const embeddings = await prisma.vectorEmbedding.findMany({ where, take: 1000 });
 
   if (embeddings.length === 0) {
     return [];

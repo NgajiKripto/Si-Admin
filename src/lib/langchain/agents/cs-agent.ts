@@ -7,7 +7,9 @@ import {
   searchKnowledgeTool,
   getCustomerHistoryTool,
   sendFeedbackTemplateTool,
+  createGuardedTools,
 } from "@/lib/langchain/tools";
+import type { GuardConfig } from "@/lib/agent-guard";
 
 const CS_SYSTEM_PROMPT = `Anda adalah agen Customer Service profesional untuk bisnis kami.
 
@@ -25,38 +27,40 @@ Panduan komunikasi:
 - Gunakan nada hangat, ramah, dan profesional`;
 
 const csTools = [searchKnowledgeTool, getCustomerHistoryTool, sendFeedbackTemplateTool];
-const toolNode = new ToolNode(csTools);
 
 type CSStateType = typeof MessagesAnnotation.State;
 
-async function csLLMNode(state: CSStateType): Promise<Partial<CSStateType>> {
-  const llm = getLLM();
-  const llmWithTools = llm.bindTools(csTools);
+export function createCSAgent(guardConfig?: GuardConfig | null) {
+  const tools = guardConfig ? createGuardedTools(csTools, guardConfig) : csTools;
+  const toolNode = new ToolNode(tools);
 
-  const messages = [new SystemMessage(CS_SYSTEM_PROMPT), ...state.messages];
-  const response = await llmWithTools.invoke(messages);
+  async function csLLMNode(state: CSStateType): Promise<Partial<CSStateType>> {
+    const llm = getLLM();
+    const llmWithTools = llm.bindTools(tools);
 
-  return { messages: [response] };
-}
+    const messages = [new SystemMessage(CS_SYSTEM_PROMPT), ...state.messages];
+    const response = await llmWithTools.invoke(messages);
 
-async function csToolNode(state: CSStateType): Promise<Partial<CSStateType>> {
-  const result = await toolNode.invoke(state);
-  return { messages: result.messages };
-}
-
-function routeAfterLLM(state: CSStateType): "tools" | typeof END {
-  const lastMessage = state.messages[state.messages.length - 1];
-  if (
-    lastMessage instanceof AIMessage &&
-    lastMessage.tool_calls &&
-    lastMessage.tool_calls.length > 0
-  ) {
-    return "tools";
+    return { messages: [response] };
   }
-  return END;
-}
 
-export function createCSAgent() {
+  async function csToolNode(state: CSStateType): Promise<Partial<CSStateType>> {
+    const result = await toolNode.invoke(state);
+    return { messages: result.messages };
+  }
+
+  function routeAfterLLM(state: CSStateType): "tools" | typeof END {
+    const lastMessage = state.messages[state.messages.length - 1];
+    if (
+      lastMessage instanceof AIMessage &&
+      lastMessage.tool_calls &&
+      lastMessage.tool_calls.length > 0
+    ) {
+      return "tools";
+    }
+    return END;
+  }
+
   const workflow = new StateGraph(MessagesAnnotation)
     .addNode("llm", csLLMNode)
     .addNode("tools", csToolNode)
