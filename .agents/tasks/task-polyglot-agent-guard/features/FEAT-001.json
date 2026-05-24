@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create the polyglot guard scripts (Python, Shell) and declarative YAML policies following BankrBot's multi-language layer architecture. This includes the Python input scanner, Python knowledge auditor, Shell skill scanner, Shell output validator, and all YAML policy files.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create scripts/guard/scan-input.py - Port input sanitization from src/lib/agent-guard/input-sanitizer.ts to Python. Use Python re module. Accept input via stdin (JSON with 'input' and optional 'blocked_patterns' fields) or via CLI argument (--input 'text'). Detect: prompt injection patterns (English + Indonesian), delimiter injection (```system, <|im_start|>, [SYSTEM], etc.), zero-width unicode chars, persona swaps. Output JSON to stdout with fields: safe (bool), reason (string|null), sanitized_input (string), matched_patterns (list). Include a --test flag that runs built-in self-tests.",
     "Create scripts/guard/audit-knowledge.py - Port knowledge auditor from src/lib/agent-guard/knowledge-auditor.ts to Python. Accept content via stdin (JSON with 'content' field). Scan for: prompt injection patterns (ignore previous instructions, you are now, act as, system:, [SYSTEM], <<SYS>>), HTML/markdown comments with hidden instructions, zero-width characters. Output JSON to stdout with fields: safe (bool), issues (list of strings). Include a --test flag.",
@@ -30,5 +30,5 @@
     "python3 -c \"import yaml\" 2>&1 || echo 'Note: PyYAML not needed, scripts parse YAML manually or use simple format'"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All self-tests pass cleanly. Python scripts use only stdlib (re, json, sys). Shell scripts are bash-compatible with standard tools (grep, sed, mktemp). npm run build still passes. No environment issues encountered."
 }
