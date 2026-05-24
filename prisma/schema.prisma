@@ -209,3 +209,17 @@ model KnowledgeGraphRelation {
   metadata     String?
   createdAt    DateTime             @default(now())
 }
+
+model AgentGuardConfig {
+  id                    String   @id @default(cuid())
+  isEnabled             Boolean  @default(true)
+  maxResponseLength     Int      @default(500)
+  maxResponseTokens     Int      @default(200)
+  allowedTopics         String   @default("[\"produk\",\"harga\",\"pengiriman\",\"pembayaran\",\"keluhan\",\"retur\",\"promo\",\"jam_operasional\",\"stok\",\"garansi\"]")
+  blockedPatterns       String   @default("[\"ignore previous\",\"abaikan instruksi\",\"you are now\",\"kamu sekarang adalah\",\"forget everything\",\"lupakan semua\",\"system:\",\"\\\\[SYSTEM\\\\]\",\"jailbreak\",\"DAN mode\"]")
+  blockedOutputPatterns String   @default("[\"system prompt\",\"instruksi sistem\",\"you are an AI\",\"saya adalah AI\"]")
+  responseFormat        String   @default("text")
+  systemPromptHash      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

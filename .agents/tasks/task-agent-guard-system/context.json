@@ -1,0 +1,25 @@
+{
+  "project_type": "Next.js 16 admin panel (TypeScript) with Prisma ORM and SQLite database",
+  "language": "TypeScript",
+  "build_system": "npm with Next.js build system. No test framework configured yet. Uses tsx for running seed scripts.",
+  "test_framework": "None configured - no test files exist in the project",
+  "build_command": "npm run build",
+  "test_command": "npm run lint",
+  "verification_instructions": "1. Run npm install to install deps, 2. Run npx prisma generate to generate client, 3. Run npx prisma db push to apply schema, 4. Run npm run build to verify TypeScript compilation and Next.js build, 5. Run npm run lint to check code quality",
+  "snapshot_or_generated_files": "Prisma client is generated via npx prisma generate. The .prisma folder in node_modules is generated.",
+  "setup_instructions": "npm install && npx prisma generate && npx prisma db push",
+  "environment_constraints": "OPEN_INTERNET - full network access. Node.js v22 available. No Docker needed for this project.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing patterns: API routes use NextRequest/NextResponse with prisma imports from @/lib/prisma. UI components use shadcn/ui (Card, Dialog, Button, Input, Label, Tabs, Switch, Badge, etc). All text in Indonesian.",
+  "key_patterns": "API routes: export async function GET/POST/PATCH/DELETE with try-catch and NextResponse.json(). UI: 'use client' components with useState/useEffect, fetch calls to API routes, shadcn/ui components. Prisma schema uses SQLite with String fields for JSON data (serialized). Path alias @/* maps to ./src/*. Settings page uses Tabs component with multiple tab panels.",
+  "relevant_files": [
+    "prisma/schema.prisma",
+    "src/lib/prisma.ts",
+    "src/app/api/pengaturan/categories/route.ts",
+    "src/app/api/chat/route.ts",
+    "src/app/(dashboard)/pengaturan/page.tsx",
+    "src/app/(dashboard)/pengaturan/components/BusinessProfileForm.tsx",
+    "src/app/(dashboard)/pengaturan/components/ChannelManager.tsx",
+    "src/app/(dashboard)/layout.tsx"
+  ],
+  "directory_structure": "src/app/(dashboard)/ - page routes with components/ subdirs. src/app/api/ - API route handlers. src/lib/ - shared utilities (prisma.ts, utils.ts). src/components/ui/ - shadcn/ui components. prisma/ - schema and seed."
+}

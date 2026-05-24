@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement the agent-guard module library, Prisma schema model, API route, and dashboard UI. This is the core feature that adds multi-layer defense for the AI agent including input sanitization, scope enforcement, response limiting, and output validation.",
+  "status": "completed",
+  "steps": [
+    "Add AgentGuardConfig model to prisma/schema.prisma. The model should store: id (cuid), isEnabled (Boolean default true), maxResponseLength (Int default 500), maxResponseTokens (Int default 200), allowedTopics (String - JSON serialized array of allowed topic strings, default Indonesian CS topics like produk, harga, pengiriman, pembayaran, keluhan, retur, promo, jam operasional, stok), blockedPatterns (String - JSON serialized array of regex patterns to detect prompt injection), blockedOutputPatterns (String - JSON serialized array of patterns to block in output like system prompt leaks), responseFormat (String default 'text' - one of 'text', 'structured'), systemPromptHash (String nullable - hash of system prompt for leak detection), createdAt, updatedAt. Run npx prisma generate and npx prisma db push after schema change.",
+    "Create src/lib/agent-guard/input-sanitizer.ts: Export a function sanitizeInput(input: string, config: GuardConfig): SanitizeResult. It should check for common prompt injection patterns like 'ignore previous instructions', 'you are now', 'system:', 'forget everything', 'jailbreak', role-switching attempts, and custom patterns from config.blockedPatterns. Return { safe: boolean, reason?: string, sanitizedInput: string }. Include Indonesian-language injection patterns too (e.g., 'abaikan instruksi', 'lupakan semua').",
+    "Create src/lib/agent-guard/scope-classifier.ts: Export a function classifyScope(input: string, allowedTopics: string[]): ScopeResult. It should use keyword-based matching to determine if the user's message falls within allowed business topics. Return { inScope: boolean, detectedTopic?: string, confidence: number }. Include Indonesian keywords mapped to topics (e.g., 'harga'/'berapa'/'diskon' -> 'harga', 'kirim'/'ongkir'/'ekspedisi' -> 'pengiriman').",
+    "Create src/lib/agent-guard/response-limiter.ts: Export a function limitResponse(response: string, config: GuardConfig): LimitResult. It should truncate responses exceeding maxResponseLength characters or maxResponseTokens (approximate by splitting on spaces). Support structured output format enforcement. Return { content: string, truncated: boolean, originalLength: number, format: string }.",
+    "Create src/lib/agent-guard/output-validator.ts: Export a function validateOutput(output: string, config: GuardConfig): ValidationResult. It should check for: system prompt leakage (if systemPromptHash is set, check if output contains fragments matching the prompt), PII patterns (email addresses, phone numbers in responses that should not be echoed), inappropriate content patterns, and custom blocked output patterns. Return { valid: boolean, issues: string[], sanitizedOutput: string }.",
+    "Create src/lib/agent-guard/index.ts: Export a unified AgentGuard class or function processMessage(input: string, config: GuardConfig): GuardResult that chains all layers: 1) input sanitization, 2) scope classification, 3) (placeholder for LLM response generation), 4) response limiting, 5) output validation. Export all types (GuardConfig, GuardResult, SanitizeResult, ScopeResult, LimitResult, ValidationResult). Also export a getDefaultConfig() function that returns sensible defaults for an Indonesian CS agent.",
+    "Create src/app/api/pengaturan/agent-guard/route.ts with GET and PATCH handlers. GET returns the current AgentGuardConfig (or creates one with defaults if none exists). PATCH updates the config. Follow the same pattern as src/app/api/pengaturan/categories/route.ts: import prisma, use try-catch, return NextResponse.json().",
+    "Create src/app/(dashboard)/pengaturan/components/AgentGuardSettings.tsx: A 'use client' component that fetches config from /api/pengaturan/agent-guard and allows editing. Include sections for: (1) Enable/disable guard with Switch, (2) Max response length and token inputs, (3) Allowed topics as a tag list with add/remove, (4) Blocked input patterns as a list with add/remove, (5) Blocked output patterns as a list with add/remove, (6) Response format selector. Use Card, Input, Label, Button, Switch, Badge components from shadcn/ui. All labels in Indonesian.",
+    "Update src/app/(dashboard)/pengaturan/page.tsx to add a new tab 'Keamanan Agent' that renders the AgentGuardSettings component. Add it after the 'Kustomisasi' tab.",
+    "Create src/lib/agent-guard/example-usage.ts: A documented example file showing how to integrate the guard into a chat API route. Show: importing the guard, loading config from prisma, running processMessage on user input, and applying output validation on the response. This serves as documentation for developers."
+  ],
+  "acceptance_criteria": [
+    "npx prisma generate succeeds with the new AgentGuardConfig model",
+    "npx prisma db push applies the new model to the database",
+    "src/lib/agent-guard/index.ts exports processMessage, getDefaultConfig, and all type interfaces",
+    "src/lib/agent-guard/input-sanitizer.ts detects common injection patterns in both English and Indonesian",
+    "src/lib/agent-guard/scope-classifier.ts correctly classifies messages into allowed topics",
+    "src/lib/agent-guard/response-limiter.ts truncates responses that exceed configured limits",
+    "src/lib/agent-guard/output-validator.ts detects potential system prompt leaks and PII",
+    "GET /api/pengaturan/agent-guard returns a valid config object with defaults",
+    "PATCH /api/pengaturan/agent-guard updates the config",
+    "The AgentGuardSettings component renders in the Pengaturan page under a new tab",
+    "npm run build completes successfully with all new files",
+    "npm run lint passes"
+  ],
+  "verification": [
+    "Run npx prisma generate and npx prisma db push - both succeed",
+    "Run npm run build - exits with code 0",
+    "Run npm run lint - exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": "All steps implemented successfully. Prisma schema updated with AgentGuardConfig model, prisma generate and db push both succeeded. Created 6 agent-guard library files (input-sanitizer, scope-classifier, response-limiter, output-validator, index, example-usage), 1 API route, 1 UI component, and updated the settings page with a new tab. Build passes with Next.js 16.2.6 Turbopack. Lint passes with 0 errors (2 pre-existing warnings in chat components unrelated to this feature). Had to inline fetchConfig inside useEffect to satisfy react-hooks/immutability lint rule."
+}
