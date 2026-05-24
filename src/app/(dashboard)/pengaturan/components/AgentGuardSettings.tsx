@@ -32,6 +32,7 @@ export default function AgentGuardSettings() {
   const [config, setConfig] = useState<AgentGuardConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Editable state
   const [isEnabled, setIsEnabled] = useState(true);
@@ -76,6 +77,7 @@ export default function AgentGuardSettings() {
   async function handleSave() {
     if (!config) return;
     setSaving(true);
+    setError(null);
     try {
       const res = await fetch("/api/pengaturan/agent-guard", {
         method: "PATCH",
@@ -93,9 +95,14 @@ export default function AgentGuardSettings() {
       if (res.ok) {
         const data = await res.json();
         setConfig(data);
+      } else {
+        const errData = await res.json().catch(() => null);
+        const message = errData?.error || "Gagal menyimpan konfigurasi";
+        setError(message);
       }
-    } catch (error) {
-      console.error("Error saving guard config:", error);
+    } catch (err) {
+      console.error("Error saving guard config:", err);
+      setError("Gagal menyimpan konfigurasi. Periksa koneksi Anda.");
     } finally {
       setSaving(false);
     }
@@ -331,6 +338,13 @@ export default function AgentGuardSettings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="flex justify-end">

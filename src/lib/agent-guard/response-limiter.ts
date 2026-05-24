@@ -19,20 +19,17 @@ export function limitResponse(
   let content = response;
   let truncated = false;
 
-  // Truncate by character limit
-  if (content.length > maxLength) {
-    content = content.substring(0, maxLength);
+  // Truncate by token count first (preserves word boundaries)
+  if (tokenCount > maxTokens) {
+    const limitedTokens = tokens.slice(0, maxTokens);
+    content = limitedTokens.join(" ");
     truncated = true;
   }
 
-  // Truncate by token count
-  if (tokenCount > maxTokens) {
-    const limitedTokens = tokens.slice(0, maxTokens);
-    const tokenLimited = limitedTokens.join(" ");
-    if (tokenLimited.length < content.length) {
-      content = tokenLimited;
-      truncated = true;
-    }
+  // Then truncate by character limit
+  if (content.length > maxLength) {
+    content = content.substring(0, maxLength);
+    truncated = true;
   }
 
   // Add truncation indicator
@@ -40,7 +37,7 @@ export function limitResponse(
     content = content.trimEnd() + "...";
   }
 
-  // Handle structured format
+  // Handle structured format after truncation to avoid corrupting JSON
   if (format === "structured") {
     try {
       JSON.parse(content);

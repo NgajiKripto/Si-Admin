@@ -22,13 +22,13 @@ export function validateOutput(
   for (const pattern of blockedOutputPatterns) {
     try {
       const regex = new RegExp(pattern, "gi");
-      if (regex.test(output)) {
+      if (regex.test(sanitizedOutput)) {
         issues.push(`Pola terblokir terdeteksi: "${pattern}"`);
         sanitizedOutput = sanitizedOutput.replace(regex, "[DISUNTING]");
       }
     } catch {
       // If regex is invalid, try plain string matching
-      if (output.toLowerCase().includes(pattern.toLowerCase())) {
+      if (sanitizedOutput.toLowerCase().includes(pattern.toLowerCase())) {
         issues.push(`Pola terblokir terdeteksi: "${pattern}"`);
         sanitizedOutput = sanitizedOutput.replace(
           new RegExp(escapeRegex(pattern), "gi"),
@@ -38,15 +38,15 @@ export function validateOutput(
     }
   }
 
-  // Check for email patterns being echoed
-  const emails = output.match(EMAIL_REGEX);
+  // Check for email patterns being echoed (detect and replace on sanitizedOutput)
+  const emails = sanitizedOutput.match(EMAIL_REGEX);
   if (emails && emails.length > 0) {
     issues.push(`Email terdeteksi dalam output: ${emails.length} alamat`);
     sanitizedOutput = sanitizedOutput.replace(EMAIL_REGEX, "[EMAIL DISUNTING]");
   }
 
-  // Check for phone number patterns (Indonesian format)
-  const phones = output.match(PHONE_REGEX);
+  // Check for phone number patterns (Indonesian format) - detect and replace on sanitizedOutput
+  const phones = sanitizedOutput.match(PHONE_REGEX);
   if (phones && phones.length > 0) {
     issues.push(
       `Nomor telepon terdeteksi dalam output: ${phones.length} nomor`
@@ -66,7 +66,7 @@ export function validateOutput(
     ];
 
     for (const pattern of suspiciousPatterns) {
-      if (pattern.test(output)) {
+      if (pattern.test(sanitizedOutput)) {
         issues.push("Potensi kebocoran system prompt terdeteksi");
         sanitizedOutput = sanitizedOutput.replace(pattern, "[DISUNTING]");
       }

@@ -9,6 +9,13 @@ import type { LimitResult } from "./response-limiter";
 import type { ValidationResult } from "./output-validator";
 
 export type { SanitizeResult } from "./input-sanitizer";
+/**
+ * WARNING: When using sanitizeInput standalone (outside of processInput),
+ * callers MUST check the `.safe` property before using `.sanitizedInput`.
+ * A result with `safe: false` means injection patterns were detected and
+ * stripped, but the sanitized text may still contain partial attack payloads.
+ * Do NOT forward sanitizedInput to an LLM without verifying safe === true.
+ */
 export { sanitizeInput } from "./input-sanitizer";
 
 export type { ScopeResult } from "./scope-classifier";

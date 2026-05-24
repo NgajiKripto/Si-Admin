@@ -58,14 +58,14 @@ export function classifyScope(
   allowedTopics: string[]
 ): ScopeResult {
   const normalizedInput = input.toLowerCase();
-  const words = normalizedInput.split(/\s+/);
 
   let bestTopic: string | undefined;
   let bestConfidence = 0;
 
   for (const topic of allowedTopics) {
-    const keywords = TOPIC_KEYWORDS[topic];
-    if (!keywords) continue;
+    // Use predefined keywords if available, otherwise fall back to the
+    // topic name itself so custom admin-added topics can still match.
+    const keywords = TOPIC_KEYWORDS[topic] ?? [topic];
 
     let matchCount = 0;
     for (const keyword of keywords) {
@@ -74,9 +74,10 @@ export function classifyScope(
       }
     }
 
-    // Calculate confidence based on matched keywords relative to input length
+    // Calculate confidence relative to keyword list size to prevent
+    // inflation on short inputs.
     const confidence = matchCount > 0
-      ? Math.min(1.0, matchCount / Math.max(1, words.length * 0.5))
+      ? Math.min(1.0, matchCount / Math.max(3, keywords.length * 0.3))
       : 0;
 
     if (confidence > bestConfidence) {
