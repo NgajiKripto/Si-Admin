@@ -6,6 +6,7 @@ import { llmDecideNode } from "./nodes/llm-decide";
 import { executeToolNode } from "./nodes/execute-tool";
 import { guardOutputNode } from "./nodes/guard-output";
 import { AIMessage } from "@langchain/core/messages";
+import { multiAgentGraph } from "@/lib/langchain/agents";
 
 function routeAfterGuardInput(
   state: AgentStateType
@@ -30,6 +31,15 @@ function routeAfterLlmDecide(
   return "guard_output";
 }
 
+function routeAfterExecuteTool(
+  state: AgentStateType
+): "llm_decide" | typeof END {
+  if (state.requiresApproval) {
+    return END;
+  }
+  return "llm_decide";
+}
+
 const workflow = new StateGraph(AgentState)
   .addNode("guard_input", guardInputNode)
   .addNode("retrieve_context", retrieveContextNode)
@@ -46,7 +56,23 @@ const workflow = new StateGraph(AgentState)
     "execute_tool",
     "guard_output",
   ])
-  .addEdge("execute_tool", "llm_decide")
+  .addConditionalEdges("execute_tool", routeAfterExecuteTool, [
+    "llm_decide",
+    END,
+  ])
   .addEdge("guard_output", END);
 
 export const agentGraph = workflow.compile();
+
+export { multiAgentGraph };
+
+/**
+ * Mengembalikan graph yang sesuai berdasarkan mode.
+ * Default: 'multi' (multi-agent system).
+ */
+export function getGraph(mode: "single" | "multi" = "multi") {
+  if (mode === "single") {
+    return agentGraph;
+  }
+  return multiAgentGraph;
+}

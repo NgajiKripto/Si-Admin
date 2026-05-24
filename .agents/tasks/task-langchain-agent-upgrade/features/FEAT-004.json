@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Implement multi-agent system with specialized sub-agents (CS Agent, Stock Agent, Follow-up Agent) coordinated via LangGraph subgraphs, plus streaming responses endpoint and human-in-the-loop approval mechanism.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/langchain/agents/cs-agent.ts - Specialized CS (Customer Service) sub-agent as a LangGraph subgraph. Has access to tools: search_knowledge, get_customer_history, send_feedback_template. Uses CS-specific system prompt focused on customer interaction, empathy, and Indonesian communication style.",
     "Create src/lib/langchain/agents/stock-agent.ts - Specialized Stock sub-agent as a LangGraph subgraph. Has access to tools: check_stock, update_stock. Uses stock-specific system prompt focused on inventory management, stock alerts, and accurate quantity reporting.",
