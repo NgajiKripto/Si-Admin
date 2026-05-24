@@ -14,6 +14,8 @@
 
 import { processInput, processOutput } from "@/lib/agent-guard";
 import type { GuardConfig } from "@/lib/agent-guard";
+import { isActionAllowed } from "@/lib/agent-guard/action-permissions";
+import type { ActionType } from "@/lib/agent-guard/action-permissions";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -43,6 +45,8 @@ export async function exampleChatHandler(userMessage: string) {
     blockedOutputPatterns: JSON.parse(dbConfig.blockedOutputPatterns),
     responseFormat: dbConfig.responseFormat,
     systemPromptHash: dbConfig.systemPromptHash,
+    readOnlyMode: dbConfig.readOnlyMode,
+    allowedActions: JSON.parse(dbConfig.allowedActions),
   };
 
   // Langkah 2: Jika guard tidak aktif, lewati pengecekan
@@ -88,4 +92,38 @@ async function callLLM(input: string): Promise<string> {
   // Contoh: const response = await openai.chat.completions.create(...)
   void input;
   return "Respons dari LLM";
+}
+
+/**
+ * Contoh penggunaan isActionAllowed untuk memeriksa izin aksi.
+ *
+ * Fungsi ini menunjukkan bagaimana agent runtime (di luar dashboard ini)
+ * akan menggunakan isActionAllowed sebelum menjalankan aksi tertentu.
+ * Dashboard menyimpan konfigurasi ke database; agent runtime membacanya.
+ */
+export async function exampleActionGuard(actionType: ActionType) {
+  const dbConfig = await prisma.agentGuardConfig.findFirst();
+
+  if (!dbConfig) {
+    return { allowed: false, reason: "Konfigurasi guard belum diatur." };
+  }
+
+  const permissionConfig = {
+    readOnlyMode: dbConfig.readOnlyMode,
+    allowedActions: JSON.parse(dbConfig.allowedActions) as ActionType[],
+  };
+
+  // Periksa apakah aksi diizinkan berdasarkan konfigurasi
+  const allowed = isActionAllowed(actionType, permissionConfig);
+
+  if (!allowed) {
+    return {
+      allowed: false,
+      reason: dbConfig.readOnlyMode
+        ? "Sistem dalam mode read-only, semua aksi tulis diblokir."
+        : `Aksi "${actionType}" tidak diizinkan dalam konfigurasi saat ini.`,
+    };
+  }
+
+  return { allowed: true, reason: undefined };
 }

@@ -16,7 +16,7 @@ export type { SanitizeResult } from "./input-sanitizer";
  * stripped, but the sanitized text may still contain partial attack payloads.
  * Do NOT forward sanitizedInput to an LLM without verifying safe === true.
  */
-export { sanitizeInput } from "./input-sanitizer";
+export { sanitizeInput, ZERO_WIDTH_CHARS_PATTERN } from "./input-sanitizer";
 
 export type { ScopeResult } from "./scope-classifier";
 export { classifyScope } from "./scope-classifier";
@@ -26,6 +26,12 @@ export { limitResponse } from "./response-limiter";
 
 export type { ValidationResult } from "./output-validator";
 export { validateOutput } from "./output-validator";
+
+export type { ActionType, ActionPermissionConfig } from "./action-permissions";
+export { ACTION_TYPES, isActionAllowed } from "./action-permissions";
+
+export type { AuditResult } from "./knowledge-auditor";
+export { auditKnowledgeContent } from "./knowledge-auditor";
 
 export interface GuardConfig {
   id: string;
@@ -37,6 +43,8 @@ export interface GuardConfig {
   blockedOutputPatterns: string[];
   responseFormat: string;
   systemPromptHash: string | null;
+  readOnlyMode: boolean;
+  allowedActions: string[];
 }
 
 export interface GuardResult {
@@ -170,5 +178,13 @@ export function getDefaultConfig(): GuardConfig {
     ],
     responseFormat: "text",
     systemPromptHash: null,
+    readOnlyMode: false,
+    allowedActions: [
+      "SEND_MESSAGE",
+      "CREATE_FOLLOWUP",
+      "UPDATE_STOCK",
+      "RECORD_FEEDBACK",
+      "SEND_FEEDBACK_TEMPLATE",
+    ],
   };
 }

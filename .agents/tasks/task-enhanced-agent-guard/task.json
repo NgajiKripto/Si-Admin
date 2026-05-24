@@ -1,0 +1,14 @@
+{
+  "task_id": "task-enhanced-agent-guard",
+  "task_description": "Implement 7 enhancements to the existing agent-guard system: Read-Only Mode, Action-Level Permissions, Knowledge Auditor, Zero-Width Unicode Detection, README update, Prisma schema update, and API/UI updates. All changes are additive and must not break existing functionality.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "npm run build passes with exit code 0 after v2 review fixes. Removed /g flag from ZERO_WIDTH_CHARS_PATTERN to prevent stateful lastIndex drift. Anchored system: pattern to line-start with /im flag. All 30 routes compile cleanly."
+  }
+}

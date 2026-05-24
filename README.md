@@ -156,6 +156,19 @@ Halaman utama menampilkan ringkasan aktivitas customer service: total percakapan
 | Template Respons | Template balasan untuk feedback umum |
 | Analisis Rating | Lihat tren rating dari waktu ke waktu |
 
+### Keamanan Agent (Agent Guard)
+
+| Fitur | Deskripsi |
+|:------|:----------|
+| Multi-Layer Defense | Sistem pertahanan berlapis untuk melindungi agent AI |
+| Input Sanitization | Deteksi dan pembersihan pola injeksi termasuk zero-width characters |
+| Scope Enforcement | Pembatasan topik percakapan sesuai konfigurasi |
+| Response Limiting | Pembatasan panjang dan token respons agent |
+| Output Validation | Validasi output untuk mencegah kebocoran informasi sensitif |
+| Action-Level Permissions | Kontrol granular aksi yang boleh dilakukan agent |
+| Knowledge Audit | Pemeriksaan konten knowledge base terhadap pola injeksi |
+| Read-Only Mode | Mode darurat untuk memblokir semua aksi tulis agent |
+
 ---
 
 ## Arsitektur
