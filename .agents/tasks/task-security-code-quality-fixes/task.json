@@ -1,0 +1,7 @@
+{
+  "task_id": "task-security-code-quality-fixes",
+  "task_description": "Fix all security and code quality issues found during code review: authentication on API routes, hardcoded secrets, input validation, race conditions, rate limiting, session deduplication, word boundary matching, pagination, and add unit tests for agent-guard modules.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Add unit tests for agent-guard modules (input-sanitizer, scope-classifier, output-validator, action-permissions) - these are pure functions that are straightforward to test",
+  "status": "pending",
+  "steps": [
+    "Create tests/agent-guard/input-sanitizer.test.ts - test sanitizeInput function: safe input passes through, zero-width characters are detected and stripped, built-in injection patterns (like 'act as', 'abaikan semua instruksi') are caught, delimiter patterns (```system, [SYSTEM]) are detected, custom blocked patterns work, multiple patterns in one input are all caught.",
+    "Create tests/agent-guard/scope-classifier.test.ts - test classifyScope function: matching allowed topic returns inScope:true with correct topic, no matching topic returns inScope:false, partial word matches DON'T trigger (after our fix - 'produksi' should not match 'produk'), confidence calculation works correctly, empty input returns inScope:false, custom topics without predefined keywords still work.",
+    "Create tests/agent-guard/output-validator.test.ts - test validateOutput function: clean output passes validation, blocked output patterns are detected and replaced with [DISUNTING], email addresses are detected and redacted, Indonesian phone numbers (08xx, +62xx) are detected and redacted, system prompt fragments are detected when systemPromptHash is provided.",
+    "Create tests/agent-guard/action-permissions.test.ts - test isActionAllowed function: allowed action returns true, disallowed action returns false, readOnlyMode blocks all actions (since READ_ONLY_ALLOWED is empty), all ACTION_TYPES are testable.",
+    "Verify all tests pass with: npx vitest run"
+  ],
+  "acceptance_criteria": [
+    "tests/agent-guard/input-sanitizer.test.ts exists with at least 6 test cases",
+    "tests/agent-guard/scope-classifier.test.ts exists with at least 5 test cases including word boundary test",
+    "tests/agent-guard/output-validator.test.ts exists with at least 5 test cases",
+    "tests/agent-guard/action-permissions.test.ts exists with at least 4 test cases",
+    "All tests pass with npx vitest run"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/Si-Admin && npx vitest run"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

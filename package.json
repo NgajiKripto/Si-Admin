@@ -52,12 +52,14 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }
