@@ -10,6 +10,14 @@ const DEFAULT_OPTIONS: RateLimiterOptions = {
   maxRequests: 20,
 };
 
+/**
+ * In-memory sliding-window rate limiter suitable for single-process deployments.
+ *
+ * Request timestamps are stored in a plain Map that resets on process restart.
+ * For serverless or multi-instance production deployments, replace this with an
+ * external store such as Redis or Upstash to ensure rate limit state is shared
+ * across instances and persists across cold starts.
+ */
 class RateLimiter {
   private requests: Map<string, number[]>;
   private options: RateLimiterOptions;

@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting
-    const rateLimitKey = sessionId || request.headers.get("x-forwarded-for") || "anonymous";
+    // Rate limiting - use server-controlled identity, not client-supplied sessionId
+    const rateLimitKey = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "anonymous";
     if (rateLimiter.isRateLimited(rateLimitKey)) {
       return new Response(
         encoder.encode(
