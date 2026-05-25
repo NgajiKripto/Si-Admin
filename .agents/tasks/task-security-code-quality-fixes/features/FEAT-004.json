@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Add unit tests for agent-guard modules (input-sanitizer, scope-classifier, output-validator, action-permissions) - these are pure functions that are straightforward to test",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create tests/agent-guard/input-sanitizer.test.ts - test sanitizeInput function: safe input passes through, zero-width characters are detected and stripped, built-in injection patterns (like 'act as', 'abaikan semua instruksi') are caught, delimiter patterns (```system, [SYSTEM]) are detected, custom blocked patterns work, multiple patterns in one input are all caught.",
     "Create tests/agent-guard/scope-classifier.test.ts - test classifyScope function: matching allowed topic returns inScope:true with correct topic, no matching topic returns inScope:false, partial word matches DON'T trigger (after our fix - 'produksi' should not match 'produk'), confidence calculation works correctly, empty input returns inScope:false, custom topics without predefined keywords still work.",
@@ -21,5 +21,5 @@
     "Run: cd /projects/sandbox/Si-Admin && npx vitest run"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 25 tests pass (4 test files). vitest v4.1.7 runs correctly with the @/ path alias. No issues encountered."
 }
