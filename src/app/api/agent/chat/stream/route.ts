@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
 import { createCallbacks } from "@/lib/langchain/callbacks";
 import { getOpenAIConfig } from "@/lib/langchain/config";
+import { rateLimiter } from "@/lib/rate-limiter";
+import { getOrCreateSession } from "@/lib/session-helper";
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -29,29 +31,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or reuse AgentSession
-    let session;
-    if (sessionId) {
-      session = await prisma.agentSession.findUnique({
-        where: { id: sessionId },
-      });
-
-      if (!session) {
-        session = await prisma.agentSession.create({
-          data: {
-            customerId: customerId || null,
-            status: "ACTIVE",
+    // Message length validation
+    if (message.length > 5000) {
+      return new Response(
+        encoder.encode(
+          `data: ${JSON.stringify({ type: "error", content: "Pesan terlalu panjang. Maksimal 5000 karakter." })}\n\n`
+        ),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
           },
-        });
-      }
-    } else {
-      session = await prisma.agentSession.create({
-        data: {
-          customerId: customerId || null,
-          status: "ACTIVE",
-        },
-      });
+        }
+      );
     }
+
+    // Rate limiting
+    const rateLimitKey = sessionId || request.headers.get("x-forwarded-for") || "anonymous";
+    if (rateLimiter.isRateLimited(rateLimitKey)) {
+      return new Response(
+        encoder.encode(
+          `data: ${JSON.stringify({ type: "error", content: "Terlalu banyak permintaan. Silakan coba lagi nanti." })}\n\n`
+        ),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        }
+      );
+    }
+
+    // Create or reuse AgentSession
+    const session = await getOrCreateSession(sessionId, customerId);
 
     const graph = getGraph("multi");
 
