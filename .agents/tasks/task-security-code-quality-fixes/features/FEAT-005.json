@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "fix",
   "description": "Address code review feedback: fix stock API breaking change in frontend, fix rate limiter key bypass, add documentation to rate limiter and auth module, fix OpenAI config to throw unconditionally",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update src/app/(dashboard)/stok/page.tsx to handle new paginated response shape from GET /api/stok (use .items from response)",
     "Fix rate limiter key in src/app/api/agent/chat/route.ts and src/app/api/agent/chat/stream/route.ts to use request IP instead of client-controlled sessionId",
@@ -22,5 +22,5 @@
     "Run: cd /projects/sandbox/Si-Admin && npx next build"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 5 review issues addressed. NextRequest.ip is not available in Next.js 16, so rate limit key uses x-forwarded-for and x-real-ip headers instead. Frontend stok page uses data.items with fallback to data for backward compatibility. Build passes, all 25 tests pass."
 }
