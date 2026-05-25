@@ -4,19 +4,22 @@
 
 ### Sistem Administrasi Cerdas untuk Customer Service
 
-**Dashboard admin all-in-one dengan kecerdasan buatan untuk mengelola customer service secara profesional dan optimal.**
+**Dashboard admin all-in-one dengan AI Agent berbasis LangChain/LangGraph untuk mengelola customer service secara profesional dan optimal.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![LangChain](https://img.shields.io/badge/LangChain-1.4-1C3C3C?style=flat-square&logo=langchain&logoColor=white)](https://js.langchain.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.3-1C3C3C?style=flat-square)](https://langchain-ai.github.io/langgraphjs/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 ---
 
-*Dashboard admin cerdas yang belajar dari setiap interaksi untuk memberikan pelayanan customer service terbaik.*
+*AI Agent cerdas berbasis LangGraph yang belajar dari setiap interaksi, menggunakan tool calling, RAG pipeline, dan multi-agent orchestration untuk pelayanan customer service terbaik.*
 
-[Quick Start](#quick-start) · [Fitur](#fitur) · [Arsitektur](#arsitektur) · [API](#api-endpoints) · [Konfigurasi](#konfigurasi)
+[Quick Start](#quick-start) · [Fitur](#fitur) · [Arsitektur](#arsitektur) · [Agent Orchestration](#agent-orchestration-langgraph) · [API](#api-endpoints) · [Konfigurasi](#konfigurasi)
 
 </div>
 
@@ -24,11 +27,11 @@
 
 ## Overview
 
-Si-Admin adalah sistem administrasi cerdas yang dirancang khusus untuk bisnis kecil-menengah yang mengelola customer service di berbagai channel komunikasi. Berbeda dengan dashboard admin biasa, Si-Admin dilengkapi dengan kecerdasan buatan yang mampu belajar dari setiap interaksi pelanggan, membangun memori persisten, dan terus meningkatkan kualitas respons secara otomatis.
+Si-Admin adalah sistem administrasi cerdas yang dirancang khusus untuk bisnis kecil-menengah yang mengelola customer service di berbagai channel komunikasi. Berbeda dengan dashboard admin biasa, Si-Admin dilengkapi dengan AI Agent berbasis **LangChain.js** dan **LangGraph.js** yang mampu belajar dari setiap interaksi pelanggan, membangun memori persisten, dan terus meningkatkan kualitas respons secara otomatis.
 
-Sistem ini mengintegrasikan manajemen percakapan, basis pengetahuan, sistem follow-up, inventori stok, dan feedback pelanggan dalam satu platform terpadu. Dengan arsitektur memori 4-tier (Working, Episodic, Semantic, Procedural), agent AI dapat memahami konteks percakapan secara mendalam dan memberikan respons yang relevan berdasarkan pengalaman sebelumnya.
+Sistem ini mengintegrasikan manajemen percakapan, basis pengetahuan, sistem follow-up, inventori stok, dan feedback pelanggan dalam satu platform terpadu. Dengan arsitektur memori 4-tier (Working, Episodic, Semantic, Procedural) dan **RAG pipeline** berbasis vector embeddings, agent AI dapat memahami konteks percakapan secara mendalam dan memberikan respons yang relevan berdasarkan pengalaman sebelumnya.
 
-Si-Admin juga dilengkapi dengan knowledge graph untuk memahami relasi antar entitas (pelanggan, produk, kategori) dan hybrid search yang menggabungkan BM25 dengan similarity scoring untuk pencarian yang akurat dan kontekstual. Fitur self-improvement memungkinkan sistem menganalisis pola interaksi, mengukur confidence score, dan menerima koreksi dari admin untuk terus berkembang.
+Si-Admin menggunakan **LangGraph StateGraph** untuk orkestrasi agent dengan alur: guard_input, retrieve_context, llm_decide, execute_tool, dan guard_output. Sistem **multi-agent** dengan router LLM mendistribusikan tugas ke agent spesialis (CS, Stock, Follow-up). Dilengkapi knowledge graph untuk memahami relasi antar entitas, **hybrid search** yang menggabungkan BM25 + vector embeddings via Reciprocal Rank Fusion (RRF), **streaming SSE** untuk respons real-time, dan **human-in-the-loop** approval untuk aksi berdampak tinggi.
 
 ---
 
@@ -36,16 +39,23 @@ Si-Admin juga dilengkapi dengan knowledge graph untuk memahami relasi antar enti
 
 | Capability | Deskripsi |
 |:-----------|:----------|
+| **LangGraph Orchestration** | StateGraph dengan alur guard_input -> retrieve_context -> llm_decide -> execute_tool -> guard_output |
+| **Multi-Agent System** | Agent spesialis (CS, Stock, Follow-up) dengan LLM-based router |
+| **RAG Pipeline** | Retrieval-Augmented Generation dengan vector embeddings + BM25 via RRF |
+| **Tool Calling** | 6 LangChain tools: search-knowledge, check-stock, create-follow-up, get-customer-history, send-feedback-template, update-stock |
+| **Streaming SSE** | Real-time token streaming untuk respons agent |
+| **Human-in-the-Loop** | Admin approval untuk aksi berdampak tinggi (perubahan stok besar, follow-up prioritas tinggi) |
+| **Vector Embeddings** | text-embedding-3-small untuk semantic search dengan Reciprocal Rank Fusion |
+| **Memori 4-Tier** | Working, Episodic, Semantic, Procedural memory dengan konsolidasi LLM-powered |
+| **Observability** | Token usage, latency, tool execution tracking, dan full request tracing |
+| **Agent Guard** | Keamanan polyglot (Python + Shell + TypeScript) dengan input/output validation |
 | **Basis Pengetahuan** | CRUD knowledge base dengan bulk import, pengujian agent, dan kategorisasi otomatis |
-| **Memori 4-Tier** | Working, Episodic, Semantic, Procedural memory dengan konsolidasi otomatis |
 | **Self-Improvement** | Analisis pola interaksi, confidence scoring, dan koreksi admin |
 | **Knowledge Graph** | Relasi entitas dan pemahaman kontekstual antar pelanggan, produk, dan kategori |
-| **Hybrid Search** | Kombinasi BM25 + similarity scoring untuk pencarian akurat |
 | **Multi-Channel** | Dukungan WhatsApp, Telegram, Email, dan Instagram |
 | **Manajemen Stok** | Tracking inventori real-time dengan riwayat pergerakan barang |
 | **Sistem Follow-Up** | Penjadwalan dan tracking follow-up pelanggan otomatis |
 | **Feedback & Rating** | Pengumpulan dan analisis feedback dengan template respons |
-| **Agent Health Monitoring** | Dashboard kesehatan sistem AI dengan metrik performa |
 
 ---
 
@@ -61,22 +71,51 @@ Si-Admin juga dilengkapi dengan knowledge graph untuk memahami relasi antar enti
        ▼             ▼             ▼             ▼               ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           API ROUTES (Next.js)                          │
+│         /api/agent/chat  |  /api/agent/chat/stream (SSE)               │
 └─────────────────────────────────┬───────────────────────────────────────┘
                                   │
                     ┌─────────────┼─────────────┐
                     ▼             ▼             ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                    LANGGRAPH STATE GRAPH                                   │
+│                                                                           │
+│   ┌─────────────┐   ┌──────────────────┐   ┌────────────┐               │
+│   │ guard_input │──>│ retrieve_context │──>│ llm_decide │               │
+│   │(Agent Guard)│   │  (RAG Pipeline)  │   │  (OpenAI)  │               │
+│   └─────────────┘   └──────────────────┘   └─────┬──────┘               │
+│                                                    │                      │
+│                                          ┌────────┴────────┐             │
+│                                          ▼                 ▼             │
+│                                   ┌──────────────┐  ┌─────────────┐     │
+│                                   │ execute_tool │  │   respond   │     │
+│                                   │(Tool Calling)│  │  (Output)   │     │
+│                                   └──────┬───────┘  └─────────────┘     │
+│                                          │                               │
+│                                          ▼                               │
+│                                   ┌──────────────┐                       │
+│                                   │ guard_output │                       │
+│                                   │(Agent Guard) │                       │
+│                                   └──────────────┘                       │
+└───────────────────────────────────────────────────────────────────────────┘
+                    │             │             │
+                    ▼             ▼             ▼
 ┌───────────────────────┐ ┌─────────────┐ ┌──────────────────────────────┐
-│   AGENT INTELLIGENCE  │ │   PRISMA    │ │      BASIS PENGETAHUAN       │
+│   MULTI-AGENT SYSTEM  │ │   PRISMA    │ │      BASIS PENGETAHUAN       │
 ├───────────────────────┤ │   + SQLite  │ ├──────────────────────────────┤
 │                       │ └─────────────┘ │  Knowledge CRUD              │
-│  ┌─────────────────┐  │                 │  Bulk Import                 │
-│  │  Memory System  │  │                 │  Agent Testing               │
-│  │  ┌───────────┐  │  │                 └──────────────────────────────┘
-│  │  │  Working  │  │  │
-│  │  │  Episodic │  │  │
-│  │  │  Semantic │  │  │
-│  │  │ Procedural│  │  │
+│  ┌─────────────────┐  │                 │  Vector Embeddings           │
+│  │   LLM Router    │  │                 │  Bulk Import                 │
+│  │  ┌───────────┐  │  │                 │  Agent Testing               │
+│  │  │ CS Agent  │  │  │                 └──────────────────────────────┘
+│  │  │Stock Agent│  │  │
+│  │  │ FU Agent  │  │  │
 │  │  └───────────┘  │  │
+│  └─────────────────┘  │
+│                       │
+│  ┌─────────────────┐  │
+│  │  Memory System  │  │
+│  │  (4-Tier + LLM  │  │
+│  │  Consolidation) │  │
 │  └─────────────────┘  │
 │                       │
 │  ┌─────────────────┐  │
@@ -84,11 +123,11 @@ Si-Admin juga dilengkapi dengan knowledge graph untuk memahami relasi antar enti
 │  └─────────────────┘  │
 │                       │
 │  ┌─────────────────┐  │
-│  │  Self-Improve   │──┼──► Pattern Learning
+│  │  Hybrid Search  │──┼──► BM25 + Vector Embeddings (RRF)
 │  └─────────────────┘  │
 │                       │
 │  ┌─────────────────┐  │
-│  │  Hybrid Search  │  │
+│  │  Observability  │──┼──► Metrics, Traces, Token Usage
 │  └─────────────────┘  │
 └───────────────────────┘
 ```
@@ -115,11 +154,18 @@ Halaman utama menampilkan ringkasan aktivitas customer service: total percakapan
 
 | Fitur | Deskripsi |
 |:------|:----------|
+| LangGraph Orchestration | StateGraph orchestrated flow dengan guard nodes |
+| Multi-Agent Router | LLM-based routing ke agent spesialis |
+| Tool Calling | 6 tools: search-knowledge, check-stock, create-follow-up, get-customer-history, send-feedback-template, update-stock |
+| RAG Pipeline | Retrieval-Augmented Generation dengan vector embeddings |
+| Streaming SSE | Real-time token streaming via `/api/agent/chat/stream` |
+| Human-in-the-Loop | Admin approval queue untuk aksi berdampak tinggi |
 | Memory Panel | Kelola dan monitor memori 4-tier agent |
+| LLM Consolidation | Konsolidasi memori otomatis berbasis LLM |
 | Learning Panel | Pantau proses pembelajaran dan koreksi |
 | Knowledge Graph | Visualisasi relasi antar entitas |
-| Hybrid Search | Pencarian kontekstual dengan BM25 + similarity |
-| Health Dashboard | Monitor kesehatan dan performa agent AI |
+| Hybrid Search | Pencarian kontekstual dengan BM25 + Vector Embeddings (RRF) |
+| Observability | Token usage, latency, tool calls, dan request tracing |
 
 ### Manajemen Chat
 
@@ -218,6 +264,153 @@ echo '{"output": "agent response"}' | bash scripts/guard/validate-output.sh
 
 ---
 
+## Agent Orchestration (LangGraph)
+
+Si-Admin menggunakan **LangGraph StateGraph** untuk mengorkestrasi alur kerja agent. Setiap request melewati serangkaian node yang terstruktur:
+
+```
+┌───────────────┐     ┌──────────────────┐     ┌────────────────┐
+│  guard_input  │────>│ retrieve_context │────>│   llm_decide   │
+│ (Sanitasi &   │     │ (RAG: Vector +   │     │ (GPT-4o-mini   │
+│  Validasi)    │     │  BM25 via RRF)   │     │  Tool Calling) │
+└───────────────┘     └──────────────────┘     └───────┬────────┘
+                                                        │
+                                              ┌─────────┴─────────┐
+                                              ▼                   ▼
+                                       ┌─────────────┐    ┌─────────────┐
+                                       │execute_tool │    │  respond    │
+                                       │(Guarded     │    │ (Langsung   │
+                                       │ Tools)      │    │  jawab)     │
+                                       └──────┬──────┘    └─────────────┘
+                                              │
+                                              ▼
+                                       ┌──────────────┐
+                                       │ guard_output │
+                                       │ (Validasi    │
+                                       │  output)     │
+                                       └──────────────┘
+```
+
+| Node | Fungsi |
+|:-----|:-------|
+| `guard_input` | Sanitasi input, deteksi injeksi, validasi scope |
+| `retrieve_context` | Ambil konteks relevan via vector embeddings + BM25 (Reciprocal Rank Fusion) |
+| `llm_decide` | LLM memutuskan apakah perlu tool call atau langsung menjawab |
+| `execute_tool` | Eksekusi tool dengan Agent Guard enforcement |
+| `guard_output` | Validasi output sebelum dikirim ke user |
+
+### State Management
+
+```typescript
+interface AgentState {
+  messages: BaseMessage[];
+  context: RetrievedDocument[];
+  toolCalls: ToolCall[];
+  guardResult: GuardResult;
+  sessionId: string;
+}
+```
+
+---
+
+## Multi-Agent System
+
+Si-Admin mengimplementasikan arsitektur multi-agent dengan **LLM-based router** yang mendistribusikan request ke agent spesialis:
+
+| Agent | Tugas | Tools |
+|:------|:------|:------|
+| **CS Agent** | Menjawab pertanyaan pelanggan, mencari knowledge base | search-knowledge, get-customer-history, send-feedback-template |
+| **Stock Agent** | Mengelola informasi stok dan inventori | check-stock, update-stock |
+| **Follow-up Agent** | Membuat dan mengelola follow-up pelanggan | create-follow-up, get-customer-history |
+
+### Router
+
+Router berbasis LLM menganalisis intent dari pesan masuk dan mendistribusikan ke agent yang paling tepat. Prompt router dirancang dalam Bahasa Indonesia untuk konteks CS lokal.
+
+```
+User Message ──> LLM Router ──┬──> CS Agent
+                              ├──> Stock Agent
+                              └──> Follow-up Agent
+```
+
+### Guarded Tools
+
+Semua tools dibungkus dengan `guarded-tools.ts` yang memastikan:
+- Agent Guard enforcement sebelum eksekusi tool
+- Action-level permissions dari YAML policy
+- Human approval untuk aksi berdampak tinggi (stok besar, follow-up prioritas tinggi)
+
+---
+
+## Streaming & Human-in-the-Loop
+
+### SSE Streaming
+
+Endpoint `/api/agent/chat/stream` menyediakan **Server-Sent Events** untuk real-time token streaming:
+
+```
+Client                          Server
+  │                               │
+  │── POST /api/agent/chat/stream ──>│
+  │                               │
+  │<── event: token ──────────────│  (per token)
+  │<── event: token ──────────────│
+  │<── event: tool_call ──────────│  (tool execution)
+  │<── event: token ──────────────│
+  │<── event: done ───────────────│  (selesai)
+  │                               │
+```
+
+### Human-in-the-Loop Approval
+
+Aksi berdampak tinggi memerlukan persetujuan admin melalui **HumanApprovalQueue**:
+
+| Trigger | Contoh |
+|:--------|:-------|
+| Perubahan stok besar | Update stok > threshold yang dikonfigurasi |
+| Follow-up prioritas tinggi | Follow-up dengan priority `HIGH` atau `URGENT` |
+| Aksi sensitif lainnya | Sesuai konfigurasi YAML policy |
+
+Alur approval:
+
+1. Agent memutuskan aksi yang memerlukan approval
+2. Request masuk ke `HumanApprovalQueue` (Prisma model)
+3. Admin melihat queue di dashboard atau via `GET /api/agent/approval`
+4. Admin approve/reject via `POST /api/agent/approval`
+5. Jika approved, aksi dieksekusi; jika rejected, agent informed
+
+---
+
+## Observability & Metrics
+
+Si-Admin menyediakan observability lengkap untuk setiap request agent:
+
+### AgentMetrics (Per-Request)
+
+| Metrik | Deskripsi |
+|:-------|:----------|
+| `totalTokens` | Total token yang digunakan (prompt + completion) |
+| `promptTokens` | Token untuk prompt/context |
+| `completionTokens` | Token untuk respons |
+| `latencyMs` | Total latency request dalam milliseconds |
+| `toolCalls` | Jumlah tool yang dipanggil |
+| `toolNames` | Nama-nama tool yang dieksekusi |
+| `model` | Model yang digunakan (e.g., gpt-4o-mini) |
+
+### Callbacks
+
+| Handler | Fungsi |
+|:--------|:-------|
+| `MetricsHandler` | Mengumpulkan token usage dan latency per-request |
+| `TracingHandler` | Full request tracing untuk debugging |
+
+### API Endpoints
+
+- `GET /api/agent/metrics` - Performa 24 jam terakhir (aggregated)
+- `GET /api/agent/metrics/traces` - Detail trace per-request untuk debugging
+
+---
+
 ## Arsitektur
 
 ```
@@ -242,11 +435,17 @@ src/
 │   │   └── page.tsx              # Halaman utama dashboard
 │   └── api/                      # API Routes
 │       ├── agent/                # Agent intelligence endpoints
+│       │   ├── approval/         # Human-in-the-loop approval queue
+│       │   ├── chat/             # Agent chat + streaming (LangGraph)
+│       │   │   └── stream/       # SSE streaming endpoint
+│       │   ├── embeddings/       # Vector embedding management
 │       │   ├── graph/            # Knowledge graph & relations
 │       │   ├── health/           # Health monitoring
 │       │   ├── learning/         # Self-improvement & learning
 │       │   ├── memory/           # Memory system & consolidation
-│       │   └── search/           # Hybrid search
+│       │   ├── metrics/          # Performance metrics & traces
+│       │   │   └── traces/       # Per-request debug traces
+│       │   └── search/           # Hybrid search (BM25 + Vector)
 │       ├── chat/                 # Chat & conversation endpoints
 │       ├── customers/            # Customer data
 │       ├── feedback/             # Feedback & templates
@@ -255,10 +454,39 @@ src/
 │       ├── pengaturan/           # Settings, channels, categories
 │       └── stok/                 # Stock & movement
 ├── components/ui/                # shadcn/ui components
-└── lib/                          # Utilities (Prisma client, cn helper)
+└── lib/                          # Utilities & services
+    ├── prisma.ts                 # Prisma client
+    ├── utils.ts                  # cn helper
+    └── langchain/                # LangChain/LangGraph AI system
+        ├── config.ts             # OpenAI config (model, apiKey, temperature, maxIterations)
+        ├── llm.ts                # LLM service layer
+        ├── prompts.ts            # Indonesian CS agent prompt templates
+        ├── embeddings.ts         # Vector embedding generation
+        ├── embeddings-service.ts # Embedding CRUD & search service
+        ├── consolidation.ts      # LLM-powered memory consolidation
+        ├── tools/                # LangChain Tools
+        │   ├── search-knowledge.ts
+        │   ├── check-stock.ts
+        │   ├── create-follow-up.ts
+        │   ├── get-customer-history.ts
+        │   ├── send-feedback-template.ts
+        │   ├── update-stock.ts
+        │   └── guarded-tools.ts  # Tools with Agent Guard enforcement
+        ├── graph/                # LangGraph StateGraph
+        │   ├── state.ts          # Graph state definition
+        │   ├── nodes/            # Graph nodes (guard, retrieve, llm, tool, output)
+        │   └── index.ts          # StateGraph compilation & export
+        ├── agents/               # Multi-Agent System
+        │   ├── cs-agent.ts       # Customer Service agent
+        │   ├── stock-agent.ts    # Stock management agent
+        │   ├── followup-agent.ts # Follow-up agent
+        │   └── router.ts        # LLM-based agent router
+        └── callbacks/            # Observability
+            ├── metrics-handler.ts  # Token & latency tracking
+            └── tracing-handler.ts  # Full request tracing
 
 prisma/
-├── schema.prisma                 # Database schema (13+ models)
+├── schema.prisma                 # Database schema (17+ models)
 ├── seed.ts                       # Sample data seeder
 └── dev.db                        # SQLite database
 ```
@@ -274,7 +502,7 @@ prisma/
 | 3 | **Memori Semantik (Semantic)** | Fakta umum tentang pelanggan, produk, dan preferensi | Rendah - bertahan lama |
 | 4 | **Memori Prosedural (Procedural)** | Pola respons yang terbukti berhasil dan efektif | Sangat rendah - permanen |
 
-### Pipeline Konsolidasi
+### Pipeline Konsolidasi (LLM-Powered)
 
 ```
 Percakapan Baru
@@ -288,17 +516,22 @@ Percakapan Baru
 ┌──────────────┐
 │ Episodic Mem │ ──► Ringkasan interaksi disimpan
 └──────┬───────┘
-       │ (analisis pola berulang)
+       │ (LLM analisis pola berulang)
        ▼
 ┌──────────────┐
-│ Semantic Mem │ ──► Fakta diekstrak dan disimpan
+│ Semantic Mem │ ──► Fakta diekstrak oleh LLM
 └──────┬───────┘
-       │ (pola respons berhasil teridentifikasi)
+       │ (LLM identifikasi pola respons berhasil)
        ▼
 ┌──────────────┐
 │Procedural Mem│ ──► Best practices disimpan permanen
 └──────────────┘
 ```
+
+Konsolidasi memori menggunakan **LLM-powered analysis** (`src/lib/langchain/consolidation.ts`) untuk:
+- Mengekstrak fakta penting dari percakapan episodik
+- Mengidentifikasi pola respons yang berhasil
+- Mempromosikan memori antar tier secara otomatis berdasarkan analisis LLM
 
 ---
 
@@ -322,13 +555,93 @@ Sistem self-improvement Si-Admin bekerja dalam loop berkelanjutan:
 
 ---
 
+## Hybrid Search (BM25 + Vector Embeddings)
+
+Si-Admin menggunakan **Reciprocal Rank Fusion (RRF)** untuk menggabungkan dua metode pencarian:
+
+| Metode | Teknologi | Kekuatan |
+|:-------|:----------|:---------|
+| **BM25** | Full-text search | Exact keyword matching, cepat untuk query spesifik |
+| **Vector Embeddings** | text-embedding-3-small (OpenAI) | Semantic similarity, memahami makna dan konteks |
+
+### Alur Hybrid Search
+
+```
+Query Masuk
+     │
+     ├──► BM25 Search ──────────► Ranked Results (keyword)
+     │                                    │
+     └──► Vector Search ─────────► Ranked Results (semantic)
+          (text-embedding-3-small)        │
+                                          ▼
+                                 ┌─────────────────┐
+                                 │ Reciprocal Rank │
+                                 │ Fusion (RRF)    │
+                                 └────────┬────────┘
+                                          │
+                                          ▼
+                                  Final Ranked Results
+```
+
+### Vector Embeddings (Prisma Model)
+
+Embeddings disimpan di model `VectorEmbedding` dan dikelola via:
+- `POST /api/agent/embeddings` - Generate embeddings untuk knowledge entries
+- `GET /api/agent/embeddings` - Lihat status embeddings
+- Otomatis di-generate saat knowledge entry baru dibuat
+
+---
+
 ## API Endpoints
+
+### Agent AI (LangChain/LangGraph)
+
+| Method | Path | Deskripsi |
+|:-------|:-----|:----------|
+| `POST` | `/api/agent/chat` | Chat utama agent (LangGraph orchestrated) |
+| `POST` | `/api/agent/chat/stream` | SSE streaming responses (real-time tokens) |
+| `GET` | `/api/agent/approval` | Ambil antrian approval (Human-in-the-Loop) |
+| `POST` | `/api/agent/approval` | Approve/reject aksi di antrian |
+| `GET` | `/api/agent/embeddings` | Ambil data vector embeddings |
+| `POST` | `/api/agent/embeddings` | Generate/update embeddings |
+| `GET` | `/api/agent/metrics` | Performa agent 24 jam (aggregated) |
+| `GET` | `/api/agent/metrics/traces` | Debug traces per-request |
+| `GET` | `/api/agent/memory` | Ambil data memori agent |
+| `POST` | `/api/agent/memory` | Simpan memori baru |
+| `POST` | `/api/agent/memory/consolidate` | Jalankan konsolidasi memori (LLM-powered) |
+| `GET` | `/api/agent/learning` | Ambil data pembelajaran |
+| `POST` | `/api/agent/learning` | Tambah entri pembelajaran |
+| `PUT` | `/api/agent/learning/[id]` | Update entri pembelajaran |
+| `GET` | `/api/agent/graph` | Ambil data knowledge graph |
+| `POST` | `/api/agent/graph` | Tambah node ke graph |
+| `GET` | `/api/agent/graph/relations` | Ambil relasi antar node |
+| `POST` | `/api/agent/graph/relations` | Buat relasi baru |
+| `POST` | `/api/agent/search` | Hybrid search (BM25 + Vector Embeddings via RRF) |
+| `GET` | `/api/agent/health` | Status kesehatan agent |
+
+### Chat & Percakapan
 
 | Method | Path | Deskripsi |
 |:-------|:-----|:----------|
 | `GET` | `/api/chat` | Ambil daftar percakapan |
 | `POST` | `/api/chat` | Buat percakapan baru |
 | `GET` | `/api/chat/[conversationId]` | Ambil detail percakapan |
+
+### Knowledge Base
+
+| Method | Path | Deskripsi |
+|:-------|:-----|:----------|
+| `GET` | `/api/knowledge` | Ambil daftar knowledge base |
+| `POST` | `/api/knowledge` | Tambah entri knowledge |
+| `GET` | `/api/knowledge/[id]` | Ambil detail knowledge |
+| `PUT` | `/api/knowledge/[id]` | Update knowledge entry |
+| `DELETE` | `/api/knowledge/[id]` | Hapus knowledge entry |
+| `POST` | `/api/knowledge/test` | Uji respons agent |
+
+### Follow-Up, Feedback, Stok, Pelanggan
+
+| Method | Path | Deskripsi |
+|:-------|:-----|:----------|
 | `GET` | `/api/customers` | Ambil daftar pelanggan |
 | `GET` | `/api/feedback` | Ambil daftar feedback |
 | `POST` | `/api/feedback` | Kirim feedback baru |
@@ -338,35 +651,22 @@ Sistem self-improvement Si-Admin bekerja dalam loop berkelanjutan:
 | `POST` | `/api/follow-up` | Buat follow-up baru |
 | `PUT` | `/api/follow-up/[id]` | Update follow-up |
 | `DELETE` | `/api/follow-up/[id]` | Hapus follow-up |
-| `GET` | `/api/knowledge` | Ambil daftar knowledge base |
-| `POST` | `/api/knowledge` | Tambah entri knowledge |
-| `GET` | `/api/knowledge/[id]` | Ambil detail knowledge |
-| `PUT` | `/api/knowledge/[id]` | Update knowledge entry |
-| `DELETE` | `/api/knowledge/[id]` | Hapus knowledge entry |
-| `POST` | `/api/knowledge/test` | Uji respons agent |
-| `GET` | `/api/agent/memory` | Ambil data memori agent |
-| `POST` | `/api/agent/memory` | Simpan memori baru |
-| `POST` | `/api/agent/memory/consolidate` | Jalankan konsolidasi memori |
-| `GET` | `/api/agent/learning` | Ambil data pembelajaran |
-| `POST` | `/api/agent/learning` | Tambah entri pembelajaran |
-| `PUT` | `/api/agent/learning/[id]` | Update entri pembelajaran |
-| `GET` | `/api/agent/graph` | Ambil data knowledge graph |
-| `POST` | `/api/agent/graph` | Tambah node ke graph |
-| `GET` | `/api/agent/graph/relations` | Ambil relasi antar node |
-| `POST` | `/api/agent/graph/relations` | Buat relasi baru |
-| `POST` | `/api/agent/search` | Hybrid search (BM25 + similarity) |
-| `GET` | `/api/agent/health` | Status kesehatan agent |
+| `GET` | `/api/stok` | Ambil daftar stok |
+| `POST` | `/api/stok` | Tambah produk baru |
+| `PUT` | `/api/stok/[id]` | Update produk |
+| `DELETE` | `/api/stok/[id]` | Hapus produk |
+| `POST` | `/api/stok/movement` | Catat pergerakan stok |
+
+### Pengaturan
+
+| Method | Path | Deskripsi |
+|:-------|:-----|:----------|
 | `GET` | `/api/pengaturan` | Ambil pengaturan sistem |
 | `POST` | `/api/pengaturan` | Simpan pengaturan |
 | `GET` | `/api/pengaturan/channels` | Ambil daftar channel |
 | `POST` | `/api/pengaturan/channels` | Tambah/update channel |
 | `GET` | `/api/pengaturan/categories` | Ambil daftar kategori |
 | `POST` | `/api/pengaturan/categories` | Tambah kategori baru |
-| `GET` | `/api/stok` | Ambil daftar stok |
-| `POST` | `/api/stok` | Tambah produk baru |
-| `PUT` | `/api/stok/[id]` | Update produk |
-| `DELETE` | `/api/stok/[id]` | Hapus produk |
-| `POST` | `/api/stok/movement` | Catat pergerakan stok |
 
 ---
 
@@ -376,6 +676,10 @@ Sistem self-improvement Si-Admin bekerja dalam loop berkelanjutan:
 |:----------|:---------|
 | [Next.js 16](https://nextjs.org/) | Framework React dengan App Router dan API Routes |
 | [TypeScript](https://www.typescriptlang.org/) | Type safety dan developer experience |
+| [LangChain.js](https://js.langchain.com/) | Framework LLM: tools, prompts, chains, dan callbacks |
+| [LangGraph.js](https://langchain-ai.github.io/langgraphjs/) | StateGraph orchestration untuk alur agent |
+| [OpenAI](https://openai.com/) | GPT-4o-mini (chat) dan text-embedding-3-small (embeddings) |
+| [Zod](https://zod.dev/) | Runtime schema validation untuk tool parameters |
 | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS framework |
 | [shadcn/ui](https://ui.shadcn.com/) | Komponen UI yang accessible dan customizable |
 | [Prisma 7](https://www.prisma.io/) | ORM modern dengan type-safe database queries dan driver adapters |
@@ -394,6 +698,10 @@ cd Si-Admin
 # Install dependencies
 npm install
 
+# Setup environment variables
+cp .env.example .env
+# Edit .env dan isi OPENAI_API_KEY (wajib untuk fitur AI agent)
+
 # Setup database
 npx prisma generate
 npx prisma db push
@@ -405,6 +713,8 @@ npm run dev
 
 Buka [http://localhost:3000](http://localhost:3000) di browser untuk mengakses dashboard.
 
+> **Catatan:** `OPENAI_API_KEY` diperlukan agar fitur AI agent (chat, embeddings, consolidation) dapat berfungsi. Tanpa API key, fitur non-AI (dashboard, CRUD, stok) tetap berjalan normal.
+
 ---
 
 ## Konfigurasi
@@ -412,12 +722,39 @@ Buka [http://localhost:3000](http://localhost:3000) di browser untuk mengakses d
 | Variable | Default | Deskripsi |
 |:---------|:--------|:----------|
 | `DATABASE_URL` | `file:./dev.db` | Path ke database SQLite |
+| `OPENAI_API_KEY` | - | **(Wajib)** API key OpenAI untuk LLM dan embeddings |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Model LLM untuk chat dan tool calling |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Model untuk vector embeddings |
+| `AGENT_TEMPERATURE` | `0.3` | Temperature LLM (0 = deterministik, 1 = kreatif) |
+| `AGENT_MAX_ITERATIONS` | `10` | Maksimal iterasi tool calling per request |
 
 File `.env` di root project:
 
 ```env
 DATABASE_URL="file:./dev.db"
+
+# OpenAI (Wajib untuk fitur AI)
+OPENAI_API_KEY="sk-..."
+OPENAI_MODEL="gpt-4o-mini"
+OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
+
+# Agent Configuration
+AGENT_TEMPERATURE="0.3"
+AGENT_MAX_ITERATIONS="10"
 ```
+
+---
+
+## Database Models (Prisma)
+
+Selain model-model dasar (Customer, Conversation, Message, Knowledge, FollowUp, Stock, Feedback, dll.), Si-Admin menambahkan model baru untuk fitur AI agent:
+
+| Model | Deskripsi |
+|:------|:----------|
+| `AgentMetrics` | Per-request observability data (tokens, latency, tool calls) |
+| `VectorEmbedding` | Stored embeddings untuk semantic search |
+| `AgentSession` | Sesi percakapan agent (session management) |
+| `HumanApprovalQueue` | Antrian approval admin untuk aksi berdampak tinggi |
 
 ---
 
@@ -454,7 +791,7 @@ Kontribusi sangat diterima! Berikut panduan singkat:
 
 <div align="center">
 
-**Dibangun dengan kecerdasan buatan untuk pelayanan terbaik.**
+**Dibangun dengan LangChain.js, LangGraph.js, dan OpenAI untuk pelayanan customer service terbaik.**
 
 [Laporkan Bug](https://github.com/NgajiKripto/Si-Admin/issues) · [Request Fitur](https://github.com/NgajiKripto/Si-Admin/issues)
 
