@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "fix",
   "description": "Fix all medium and low priority issues: rate limiting, session helper extraction, input length validation, scope classifier word boundary, raw query replacement, pagination on stock API",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/lib/rate-limiter.ts - implement a simple in-memory sliding window rate limiter. Export a class or function that tracks requests per key (session ID or IP). Default: 20 requests per minute. Export a helper function getRateLimitResponse() that returns a 429 NextResponse. The rate limiter should use a Map with timestamps and auto-cleanup of old entries.",
     "Create src/lib/session-helper.ts - extract the duplicated session creation logic from both chat routes into a shared async function getOrCreateSession(sessionId?: string, customerId?: string) that returns an AgentSession. Import prisma from @/lib/prisma.",
@@ -28,5 +28,5 @@
     "Run: cd /projects/sandbox/Si-Admin && npx next build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes compile successfully with npx next build. Created rate-limiter.ts (sliding window, 20 req/min default) and session-helper.ts. Applied rate limiting and message length validation (5000 chars) to both chat endpoints. Refactored session creation to use shared helper. Fixed scope-classifier to use word boundary regex. Added justification comment for raw SQL query in dashboard. Added pagination to stock API GET (page/limit params with same pattern as knowledge route)."
 }
