@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auditKnowledgeContent } from "@/lib/agent-guard/knowledge-auditor";
 import { storeEmbedding } from "@/lib/langchain/embeddings-service";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get("search") || "";
   const category = searchParams.get("category") || "";
@@ -53,6 +57,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { title, content, category, tags, source } = body;
@@ -116,9 +123,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Fire-and-forget: generate embedding in background
+    // TODO: Implement retry mechanism for failed embedding generation
     storeEmbedding('KNOWLEDGE', entry.id, `${entry.title} ${entry.content}`).catch(err =>
-      console.error('Failed to generate embedding:', err)
+      console.error(`[Embedding] Failed to generate embedding for knowledge entry ${entry.id}:`, err)
     );
 
     return NextResponse.json(entry, { status: 201 });

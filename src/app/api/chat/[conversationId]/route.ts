@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { conversationId } = await params;
 
   try {
@@ -43,6 +47,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { conversationId } = await params;
 
   try {

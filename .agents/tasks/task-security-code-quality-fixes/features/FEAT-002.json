@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "fix",
   "description": "Fix all critical and high-priority security/code quality issues: auth middleware, hardcoded secrets, OpenAI key validation, race condition in stock update, fire-and-forget embedding logging, execSync replacement",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/lib/auth.ts - export a function requireAuth(request: NextRequest) that reads the x-admin-token header and validates against process.env.ADMIN_SECRET. If ADMIN_SECRET env var is missing in production (NODE_ENV==='production'), throw an error at module load time. In development, allow a fallback but log a warning. Return NextResponse with 401 if unauthorized, or null if authorized.",
     "Update src/app/api/agent/approval/route.ts - remove the hardcoded fallback 'dev-admin-token'. Instead at the top level: if NODE_ENV is production and ADMIN_SECRET is not set, throw. In development, use a logged warning fallback. Also wrap JSON.parse(queueItem.actionPayload) in try-catch for issue #12.",
