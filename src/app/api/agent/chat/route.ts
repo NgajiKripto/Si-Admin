@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getGraph } from "@/lib/langchain/graph";
 import { createCallbacks } from "@/lib/langchain/callbacks";
 import { getOpenAIConfig } from "@/lib/langchain/config";
+import { rateLimiter, getRateLimitResponse } from "@/lib/rate-limiter";
+import { getOrCreateSession } from "@/lib/session-helper";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,29 +28,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or reuse AgentSession
-    let session;
-    if (sessionId) {
-      session = await prisma.agentSession.findUnique({
-        where: { id: sessionId },
-      });
-
-      if (!session) {
-        session = await prisma.agentSession.create({
-          data: {
-            customerId: customerId || null,
-            status: "ACTIVE",
-          },
-        });
-      }
-    } else {
-      session = await prisma.agentSession.create({
-        data: {
-          customerId: customerId || null,
-          status: "ACTIVE",
-        },
-      });
+    // Message length validation
+    if (message.length > 5000) {
+      return NextResponse.json(
+        { error: "Pesan terlalu panjang. Maksimal 5000 karakter." },
+        { status: 400 }
+      );
     }
+
+    // Rate limiting - use server-controlled identity, not client-supplied sessionId
+    const rateLimitKey = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "anonymous";
+    if (rateLimiter.isRateLimited(rateLimitKey)) {
+      return getRateLimitResponse();
+    }
+
+    // Create or reuse AgentSession
+    const session = await getOrCreateSession(sessionId, customerId);
 
     // Use multi-agent graph by default
     const graph = getGraph("multi");

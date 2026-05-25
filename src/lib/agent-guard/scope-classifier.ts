@@ -53,6 +53,10 @@ const TOPIC_KEYWORDS: Record<string, string[]> = {
 
 const CONFIDENCE_THRESHOLD = 0.3;
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function classifyScope(
   input: string,
   allowedTopics: string[]
@@ -69,7 +73,11 @@ export function classifyScope(
 
     let matchCount = 0;
     for (const keyword of keywords) {
-      if (normalizedInput.includes(keyword.toLowerCase())) {
+      // Use word boundary to prevent partial word matches
+      // (e.g., "produk" should not match "produksi")
+      const keywordLower = keyword.toLowerCase();
+      const wordBoundaryRegex = new RegExp(`\\b${escapeRegex(keywordLower)}\\b`, 'i');
+      if (wordBoundaryRegex.test(normalizedInput)) {
         matchCount++;
       }
     }

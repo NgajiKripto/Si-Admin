@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix all medium and low priority issues: rate limiting, session helper extraction, input length validation, scope classifier word boundary, raw query replacement, pagination on stock API",
+  "status": "completed",
+  "steps": [
+    "Create src/lib/rate-limiter.ts - implement a simple in-memory sliding window rate limiter. Export a class or function that tracks requests per key (session ID or IP). Default: 20 requests per minute. Export a helper function getRateLimitResponse() that returns a 429 NextResponse. The rate limiter should use a Map with timestamps and auto-cleanup of old entries.",
+    "Create src/lib/session-helper.ts - extract the duplicated session creation logic from both chat routes into a shared async function getOrCreateSession(sessionId?: string, customerId?: string) that returns an AgentSession. Import prisma from @/lib/prisma.",
+    "Apply rate limiter to src/app/api/agent/chat/route.ts and src/app/api/agent/chat/stream/route.ts. Use the session ID or request IP as the rate limit key. Return 429 if limit exceeded.",
+    "Add input length validation to both chat endpoints: reject messages longer than 5000 characters with a 400 response.",
+    "Refactor both chat routes to use the shared getOrCreateSession helper instead of duplicated session logic.",
+    "Fix src/lib/agent-guard/scope-classifier.ts - change the includes() keyword matching to use word boundary regex (\\b) to prevent partial word matches. For example, 'produk' should not match within 'produksi'. Replace: if (normalizedInput.includes(keyword.toLowerCase())) with a regex test using \\b word boundaries.",
+    "Fix src/app/(dashboard)/page.tsx - replace the $queryRaw call with a proper Prisma query. Use prisma.stockItem.count({ where: { quantity: { lte: prisma.stockItem.fields.minThreshold } } }) or since Prisma doesn't support field-to-field comparison easily with SQLite, use $queryRaw but add a comment explaining why it's needed (field-to-field comparison not supported in Prisma's type-safe API for SQLite). Alternatively, use prisma.stockItem.findMany({ select: { quantity: true, minThreshold: true }}) and filter in JS, or keep raw query with a clear comment.",
+    "Add pagination to src/app/api/stok/route.ts GET endpoint - add page and limit query params (following the same pattern as knowledge route: parse page/limit from searchParams, calculate skip, return {items, total, page, limit, totalPages})."
+  ],
+  "acceptance_criteria": [
+    "src/lib/rate-limiter.ts exists with a working rate limiter implementation",
+    "src/lib/session-helper.ts exists with getOrCreateSession function",
+    "Chat endpoints (both regular and stream) use rate limiting and return 429 when exceeded",
+    "Chat endpoints validate message length (max 5000 chars)",
+    "Chat endpoints use shared session helper (no duplicated logic)",
+    "Scope classifier uses word boundary matching - 'produksi' does NOT match 'produk' keyword",
+    "Dashboard page has clear justification comment for raw query OR uses a safer alternative",
+    "Stock API GET supports pagination with page/limit params",
+    "Project still builds with npx next build"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/Si-Admin && npx next build"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes compile successfully with npx next build. Created rate-limiter.ts (sliding window, 20 req/min default) and session-helper.ts. Applied rate limiting and message length validation (5000 chars) to both chat endpoints. Refactored session creation to use shared helper. Fixed scope-classifier to use word boundary regex. Added justification comment for raw SQL query in dashboard. Added pagination to stock API GET (page/limit params with same pattern as knowledge route)."
+}

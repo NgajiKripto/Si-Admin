@@ -18,21 +18,21 @@ export const updateStockTool = new DynamicStructuredTool({
         return "Quantity harus berupa bilangan bulat positif.";
       }
 
-      const currentItem = await prisma.stockItem.findUnique({
-        where: { id: stockItemId },
-      });
-
-      if (!currentItem) {
-        return `Item stok dengan ID "${stockItemId}" tidak ditemukan.`;
-      }
-
-      if (type === "OUT" && currentItem.quantity < quantity) {
-        return `Stok tidak mencukupi. Stok saat ini: ${currentItem.quantity}, diminta: ${quantity}.`;
-      }
-
       const quantityChange = type === "IN" ? quantity : -quantity;
 
-      await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
+        const currentItem = await tx.stockItem.findUnique({
+          where: { id: stockItemId },
+        });
+
+        if (!currentItem) {
+          return `Item stok dengan ID "${stockItemId}" tidak ditemukan.`;
+        }
+
+        if (type === "OUT" && currentItem.quantity < quantity) {
+          return `Stok tidak mencukupi. Stok saat ini: ${currentItem.quantity}, diminta: ${quantity}.`;
+        }
+
         await tx.stockMovement.create({
           data: {
             stockItemId,
@@ -49,7 +49,13 @@ export const updateStockTool = new DynamicStructuredTool({
             ...(type === "IN" ? { lastRestocked: new Date() } : {}),
           },
         });
+
+        return null;
       });
+
+      if (result !== null) {
+        return result;
+      }
 
       const updatedItem = await prisma.stockItem.findUnique({
         where: { id: stockItemId },

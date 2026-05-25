@@ -74,7 +74,7 @@ export default function StokPage() {
       const res = await fetch(`/api/stok?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setItems(data);
+        setItems(data.items ?? data);
       }
     } catch (error) {
       console.error("Error fetching stock items:", error);

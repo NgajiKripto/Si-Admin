@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Address code review feedback: fix stock API breaking change in frontend, fix rate limiter key bypass, add documentation to rate limiter and auth module, fix OpenAI config to throw unconditionally",
+  "status": "completed",
+  "steps": [
+    "Update src/app/(dashboard)/stok/page.tsx to handle new paginated response shape from GET /api/stok (use .items from response)",
+    "Fix rate limiter key in src/app/api/agent/chat/route.ts and src/app/api/agent/chat/stream/route.ts to use request IP instead of client-controlled sessionId",
+    "Add JSDoc comment to RateLimiter class in src/lib/rate-limiter.ts documenting in-memory limitation",
+    "Add JSDoc comment to module-level throw in src/lib/auth.ts documenting fail-fast behavior",
+    "Fix src/lib/langchain/config.ts to throw unconditionally when OPENAI_API_KEY is not set"
+  ],
+  "acceptance_criteria": [
+    "Frontend stok page correctly accesses .items from paginated API response",
+    "Rate limiter key uses server-controlled IP, not client-supplied sessionId",
+    "RateLimiter class has JSDoc explaining in-memory limitation and recommendation for Redis/Upstash in production",
+    "Auth module has JSDoc explaining fail-fast behavior",
+    "getOpenAIConfig() and getEmbeddingConfig() throw unconditionally when OPENAI_API_KEY is not set",
+    "Project builds successfully with npx next build"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/Si-Admin && npx next build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 review issues addressed. NextRequest.ip is not available in Next.js 16, so rate limit key uses x-forwarded-for and x-real-ip headers instead. Frontend stok page uses data.items with fallback to data for backward compatibility. Build passes, all 25 tests pass."
+}

@@ -23,6 +23,9 @@ async function getDashboardData() {
   ] = await Promise.all([
     prisma.conversation.count({ where: { status: "ACTIVE" } }),
     prisma.followUp.count({ where: { status: "PENDING" } }),
+    // Raw SQL is required here because Prisma's type-safe query API does not support
+    // field-to-field comparisons (comparing quantity against minThreshold column).
+    // This is a known Prisma limitation for SQLite.
     prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM StockItem WHERE quantity <= minThreshold`.then(
       (r) => Number(r[0]?.count ?? 0)
     ),

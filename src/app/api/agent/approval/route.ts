@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAgentTools } from "@/lib/langchain/tools";
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET || "dev-admin-token";
-
-function checkAuth(request: NextRequest): boolean {
-  const token = request.headers.get("x-admin-token");
-  return token === ADMIN_SECRET;
-}
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  if (!checkAuth(request)) {
-    return NextResponse.json(
-      { error: "Unauthorized. Header 'x-admin-token' tidak valid." },
-      { status: 401 }
-    );
-  }
+  const authError = requireAuth(request);
+  if (authError) return authError;
 
   try {
     const pendingApprovals = await prisma.humanApprovalQueue.findMany({
@@ -24,14 +14,22 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      approvals: pendingApprovals.map((item) => ({
-        id: item.id,
-        sessionId: item.sessionId,
-        actionType: item.actionType,
-        actionPayload: JSON.parse(item.actionPayload),
-        status: item.status,
-        requestedAt: item.requestedAt,
-      })),
+      approvals: pendingApprovals.map((item) => {
+        let actionPayload: unknown;
+        try {
+          actionPayload = JSON.parse(item.actionPayload);
+        } catch {
+          actionPayload = { raw: item.actionPayload, parseError: true };
+        }
+        return {
+          id: item.id,
+          sessionId: item.sessionId,
+          actionType: item.actionType,
+          actionPayload,
+          status: item.status,
+          requestedAt: item.requestedAt,
+        };
+      }),
     });
   } catch (error) {
     console.error("Error fetching approvals:", error);
@@ -43,12 +41,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!checkAuth(request)) {
-    return NextResponse.json(
-      { error: "Unauthorized. Header 'x-admin-token' tidak valid." },
-      { status: 401 }
-    );
-  }
+  const authError = requireAuth(request);
+  if (authError) return authError;
 
   try {
     const body = await request.json();
@@ -101,10 +95,20 @@ export async function POST(request: NextRequest) {
       // Execute the stored action
       let executionResult: string;
       try {
-        const payload = JSON.parse(queueItem.actionPayload) as {
-          toolName: string;
-          args: Record<string, unknown>;
-        };
+        let payload: { toolName: string; args: Record<string, unknown> };
+        try {
+          payload = JSON.parse(queueItem.actionPayload) as {
+            toolName: string;
+            args: Record<string, unknown>;
+          };
+        } catch {
+          executionResult = "Gagal memparse payload aksi: format JSON tidak valid.";
+          return NextResponse.json({
+            success: true,
+            message: "Aksi telah disetujui tetapi gagal dieksekusi.",
+            result: executionResult,
+          });
+        }
 
         const tools = getAgentTools();
         const tool = tools.find((t) => t.name === payload.toolName);
