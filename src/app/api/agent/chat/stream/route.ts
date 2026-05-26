@@ -50,7 +50,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting - use server-controlled identity, not client-supplied sessionId
     const rateLimitKey = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "anonymous";
-    if (rateLimiter.isRateLimited(rateLimitKey)) {
+    const rateLimitKeys = [rateLimitKey];
+    if (sessionId) {
+      rateLimitKeys.push(`session:${sessionId}`);
+    }
+    if (rateLimiter.isRateLimitedMulti(rateLimitKeys)) {
       return new Response(
         encoder.encode(
           `data: ${JSON.stringify({ type: "error", content: "Terlalu banyak permintaan. Silakan coba lagi nanti." })}\n\n`
@@ -65,6 +69,10 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+
+    // Detect authentication status (do not block unauthenticated users)
+    const adminToken = request.headers.get("x-admin-token");
+    const isAuthenticated = adminToken === process.env.ADMIN_SECRET;
 
     // Create or reuse AgentSession
     const session = await getOrCreateSession(sessionId, customerId);
@@ -87,6 +95,7 @@ export async function POST(request: NextRequest) {
             {
               messages: [new HumanMessage(message)],
               sessionId: session.id,
+              isAuthenticated,
             },
             { streamMode: "updates", callbacks, recursionLimit: getOpenAIConfig().maxIterations }
           );

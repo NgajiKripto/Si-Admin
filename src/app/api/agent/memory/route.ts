@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 const VALID_TIERS = ["WORKING", "EPISODIC", "SEMANTIC", "PROCEDURAL"] as const;
 const ARCHIVED_TIERS = ["WORKING_ARCHIVED", "EPISODIC_ARCHIVED", "SEMANTIC_ARCHIVED", "PROCEDURAL_ARCHIVED"] as const;
 const ALL_VALID_TIERS = [...VALID_TIERS, ...ARCHIVED_TIERS] as const;
 
 export async function GET(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const searchParams = request.nextUrl.searchParams;
   const tier = searchParams.get("tier") || "";
   const search = searchParams.get("search") || "";
@@ -50,6 +54,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { tier, content, context, strength, decayFactor, metadata } = body;

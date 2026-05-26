@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-003",
+  "type": "chore",
+  "description": "Add comprehensive tests for all security fixes to ensure correctness and prevent regressions.",
+  "status": "pending",
+  "steps": [
+    "Add tests for memory endpoint auth in tests/lib/memory-auth.test.ts: mock requireAuth to verify it is called for GET and POST on /api/agent/memory and POST on /api/agent/memory/consolidate.",
+    "Add tests for knowledge batch audit in tests/lib/knowledge-batch-audit.test.ts: test that auditKnowledgeContent is called for each entry and that entries with injection patterns are rejected.",
+    "Add tests for the CSRF helper in tests/lib/csrf.test.ts: test that validateCsrf allows GET requests, allows POST with matching Origin, rejects POST with mismatched Origin, and handles missing Origin/Referer.",
+    "Add tests for input sanitizer enhancements in tests/agent-guard/input-sanitizer.test.ts (append to existing file): test base64-encoded injection detection, dot-splitting bypass detection, and Unicode tag character detection.",
+    "Add tests for output validator XSS escaping in tests/agent-guard/output-validator.test.ts (append to existing file): test that <script>, <img onerror=, javascript:, and onclick= patterns are caught and escaped.",
+    "Add tests for rate limiter multi-key in tests/lib/rate-limiter.test.ts (append to existing file): test isRateLimitedMulti checks all keys.",
+    "Run npx vitest run to confirm all new and existing tests pass."
+  ],
+  "acceptance_criteria": [
+    "All new test files pass with npx vitest run",
+    "Existing tests continue to pass",
+    "Tests cover the specific security fix behaviors, not just static assertions"
+  ],
+  "verification": [
+    "Run `npx vitest run` and confirm all tests pass",
+    "Run `npx vitest run --coverage` to check coverage of new security code"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 import {
   summarizeWorkingMemories,
   extractSemanticFacts,
@@ -13,7 +14,10 @@ const ARCHIVED_TIERS = {
   SEMANTIC: "SEMANTIC_ARCHIVED",
 } as const;
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);

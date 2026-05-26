@@ -21,7 +21,8 @@ const DEFAULT_OPTIONS: RateLimiterOptions = {
  * NOTE: X-Forwarded-For is only trustworthy when the application sits behind a
  * reverse proxy (e.g., nginx, Cloudflare, AWS ALB) that overwrites the header.
  * If the app is directly internet-facing, clients can spoof X-Forwarded-For to
- * bypass per-IP rate limits.
+ * bypass per-IP rate limits. In production, the reverse proxy MUST set or
+ * overwrite the X-Forwarded-For header so that it cannot be spoofed by clients.
  */
 class RateLimiter {
   private requests: Map<string, number[]>;
@@ -62,6 +63,42 @@ class RateLimiter {
     this.requests.set(key, validTimestamps);
 
     // Check global rate limit after recording the per-key timestamp
+    if (this.isGloballyRateLimited()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check multiple keys simultaneously. If ANY key is already rate limited,
+   * returns true without recording timestamps. Otherwise, records a timestamp
+   * for ALL keys and returns false. This prevents bypassing rate limits by
+   * rotating identifiers (e.g., spoofing IP while reusing a session).
+   */
+  isRateLimitedMulti(keys: string[]): boolean {
+    const now = Date.now();
+    const windowStart = now - this.options.windowMs;
+
+    // First pass: check if any key is already at the limit
+    for (const key of keys) {
+      const timestamps = this.requests.get(key) || [];
+      const validTimestamps = timestamps.filter((t) => t > windowStart);
+      this.requests.set(key, validTimestamps);
+
+      if (validTimestamps.length >= this.options.maxRequests) {
+        return true;
+      }
+    }
+
+    // Second pass: record timestamp for all keys
+    for (const key of keys) {
+      const timestamps = this.requests.get(key) || [];
+      timestamps.push(now);
+      this.requests.set(key, timestamps);
+    }
+
+    // Check global rate limit
     if (this.isGloballyRateLimited()) {
       return true;
     }

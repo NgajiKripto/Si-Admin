@@ -1,0 +1,7 @@
+{
+  "task_id": "task-security-vulnerabilities-comprehensive",
+  "task_description": "Fix all security vulnerabilities in Si-Admin: authentication gaps, prompt injection via knowledge base, confused deputy attacks, cumulative stock bypass, rate limiter spoofing, LLM DoS, CSRF, SQLite exposure, payload tampering, multilingual injection bypass, information leakage, and XSS in LLM output.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
