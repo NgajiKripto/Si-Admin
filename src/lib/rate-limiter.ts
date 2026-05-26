@@ -73,10 +73,16 @@ class RateLimiter {
   /**
    * Check multiple keys simultaneously. If ANY key is already rate limited,
    * returns true without recording timestamps. Otherwise, records a timestamp
-   * for ALL keys and returns false. This prevents bypassing rate limits by
-   * rotating identifiers (e.g., spoofing IP while reusing a session).
+   * only for the primary key (first in the array) to avoid inflating the global
+   * request count. Secondary keys are checked for violations but not written to,
+   * preventing double-counting in `isGloballyRateLimited()`.
+   *
+   * This prevents bypassing rate limits by rotating identifiers (e.g., spoofing
+   * IP while reusing a session).
    */
   isRateLimitedMulti(keys: string[]): boolean {
+    if (keys.length === 0) return false;
+
     const now = Date.now();
     const windowStart = now - this.options.windowMs;
 
@@ -91,12 +97,11 @@ class RateLimiter {
       }
     }
 
-    // Second pass: record timestamp for all keys
-    for (const key of keys) {
-      const timestamps = this.requests.get(key) || [];
-      timestamps.push(now);
-      this.requests.set(key, timestamps);
-    }
+    // Record timestamp only for the primary key (first) to avoid global double-counting
+    const primaryKey = keys[0];
+    const primaryTimestamps = this.requests.get(primaryKey) || [];
+    primaryTimestamps.push(now);
+    this.requests.set(primaryKey, primaryTimestamps);
 
     // Check global rate limit
     if (this.isGloballyRateLimited()) {

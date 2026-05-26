@@ -5,7 +5,7 @@ import { validateCsrf } from "@/lib/csrf";
 export function middleware(request: NextRequest) {
   // Block .db file access (case-insensitive, URL-decoded)
   const decodedPath = decodeURIComponent(request.nextUrl.pathname);
-  if (/\.db/i.test(decodedPath)) {
+  if (/\.db($|[?/])/i.test(decodedPath)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

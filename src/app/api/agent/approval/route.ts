@@ -82,15 +82,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "approve") {
-      // Verify payload integrity
-      if (queueItem.payloadHash) {
-        const computedHash = createHash("sha256").update(queueItem.actionPayload).digest("hex");
-        if (computedHash !== queueItem.payloadHash) {
-          return NextResponse.json(
-            { error: "Integritas payload gagal diverifikasi. Aksi ditolak." },
-            { status: 400 }
-          );
-        }
+      // Reject items without payload hash (created before integrity check was added)
+      if (!queueItem.payloadHash) {
+        return NextResponse.json(
+          { error: "Item ini tidak memiliki hash integritas. Silakan buat ulang aksi." },
+          { status: 400 }
+        );
+      }
+      const computedHash = createHash("sha256").update(queueItem.actionPayload).digest("hex");
+      if (computedHash !== queueItem.payloadHash) {
+        return NextResponse.json(
+          { error: "Integritas payload gagal diverifikasi. Aksi ditolak." },
+          { status: 400 }
+        );
       }
 
       // Update status to APPROVED

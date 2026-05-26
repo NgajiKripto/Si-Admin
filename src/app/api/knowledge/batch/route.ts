@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auditKnowledgeContent } from "@/lib/agent-guard/knowledge-auditor";
+import { requireAuth } from "@/lib/auth";
 
 const validCategories = [
   "CHAT_HISTORY",
@@ -12,6 +13,9 @@ const validCategories = [
 ];
 
 export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { entries } = body;
