@@ -17,11 +17,20 @@ const DEFAULT_OPTIONS: RateLimiterOptions = {
  * For serverless or multi-instance production deployments, replace this with an
  * external store such as Redis or Upstash to ensure rate limit state is shared
  * across instances and persists across cold starts.
+ *
+ * NOTE: X-Forwarded-For is only trustworthy when the application sits behind a
+ * reverse proxy (e.g., nginx, Cloudflare, AWS ALB) that overwrites the header.
+ * If the app is directly internet-facing, clients can spoof X-Forwarded-For to
+ * bypass per-IP rate limits.
  */
 class RateLimiter {
   private requests: Map<string, number[]>;
   private options: RateLimiterOptions;
   private cleanupInterval: ReturnType<typeof setInterval>;
+
+  // Global rate limit: 200 requests/minute across all keys
+  private globalTimestamps: number[] = [];
+  private globalMaxRequests = 200;
 
   constructor(options?: Partial<RateLimiterOptions>) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
@@ -39,6 +48,11 @@ class RateLimiter {
   }
 
   isRateLimited(key: string): boolean {
+    // Check global rate limit first
+    if (this.isGloballyRateLimited()) {
+      return true;
+    }
+
     const now = Date.now();
     const windowStart = now - this.options.windowMs;
 
@@ -55,6 +69,25 @@ class RateLimiter {
     return false;
   }
 
+  /**
+   * Check if the global rate limit (200 requests/minute across all IPs) has been exceeded.
+   */
+  isGloballyRateLimited(): boolean {
+    const now = Date.now();
+    const windowStart = now - this.options.windowMs;
+
+    this.globalTimestamps = this.globalTimestamps.filter(
+      (t) => t > windowStart
+    );
+
+    if (this.globalTimestamps.length >= this.globalMaxRequests) {
+      return true;
+    }
+
+    this.globalTimestamps.push(now);
+    return false;
+  }
+
   private cleanup() {
     const now = Date.now();
     const windowStart = now - this.options.windowMs;
@@ -67,10 +100,20 @@ class RateLimiter {
         this.requests.set(key, valid);
       }
     }
+
+    // Clean up global timestamps too
+    this.globalTimestamps = this.globalTimestamps.filter(
+      (t) => t > windowStart
+    );
   }
 }
 
 export const rateLimiter = new RateLimiter();
+
+export const knowledgeRateLimiter = new RateLimiter({
+  windowMs: 60000,
+  maxRequests: 10,
+});
 
 export function getRateLimitResponse(): NextResponse {
   return NextResponse.json(

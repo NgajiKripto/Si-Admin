@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auditKnowledgeContent } from "@/lib/agent-guard/knowledge-auditor";
 import { storeEmbedding } from "@/lib/langchain/embeddings-service";
 import { requireAuth } from "@/lib/auth";
+import { knowledgeRateLimiter, getRateLimitResponse } from "@/lib/rate-limiter";
 
 export async function GET(request: NextRequest) {
   const authError = requireAuth(request);
@@ -59,6 +60,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  // Rate limit by token to prevent knowledge base DoS
+  const token = request.headers.get("x-admin-token") || "anonymous";
+  if (knowledgeRateLimiter.isRateLimited(token)) {
+    return getRateLimitResponse();
+  }
 
   try {
     const body = await request.json();
