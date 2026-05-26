@@ -35,6 +35,10 @@ export const AgentState = Annotation.Root({
     reducer: (_, val) => val,
     default: () => null,
   }),
+  cumulativeStockChanges: Annotation<number>({
+    reducer: (prev, val) => prev + val,
+    default: () => 0,
+  }),
 });
 
 export type AgentStateType = typeof AgentState.State;

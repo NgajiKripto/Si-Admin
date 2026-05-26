@@ -100,7 +100,15 @@ export async function guardInputNode(
     };
   }
 
+  // When allowed, replace last message with sanitized version
+  const sanitizedContent = result.sanitizeResult.sanitizedInput;
+  const updatedMessages = [
+    ...state.messages.slice(0, -1),
+    new HumanMessage(sanitizedContent),
+  ];
+
   return {
+    messages: updatedMessages,
     inputAllowed: true,
     guardConfig,
     currentStep: "guard_input",

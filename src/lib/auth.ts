@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 
-const isProduction = process.env.NODE_ENV === "production";
-
-/**
- * Fail-fast guard: in production, if ADMIN_SECRET is not configured the process
- * will crash at module load time (during import resolution) rather than silently
- * serving unauthenticated requests. This is intentional -- it prevents the
- * application from starting in an insecure state.
- */
-if (isProduction && !process.env.ADMIN_SECRET) {
-  throw new Error("ADMIN_SECRET environment variable is required in production");
+if (!process.env.ADMIN_SECRET) {
+  throw new Error("ADMIN_SECRET environment variable is required");
 }
 
-if (!isProduction && !process.env.ADMIN_SECRET) {
-  console.warn("[auth] ADMIN_SECRET not set, using fallback 'dev-admin-token' for development");
-}
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET || "dev-admin-token";
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 export function requireAuth(request: NextRequest): NextResponse | null {
   const token = request.headers.get("x-admin-token");
-  if (token !== ADMIN_SECRET) {
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Use timing-safe comparison to prevent timing attacks
+  const tokenBuffer = Buffer.from(token);
+  const secretBuffer = Buffer.from(ADMIN_SECRET);
+
+  if (
+    tokenBuffer.length !== secretBuffer.length ||
+    !timingSafeEqual(tokenBuffer, secretBuffer)
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   return null;
 }
