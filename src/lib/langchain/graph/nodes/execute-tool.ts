@@ -94,7 +94,12 @@ export async function executeToolNode(
 
   const result = await toolNode.invoke(state);
 
-  // Calculate cumulative stock changes from this execution
+  // Calculate cumulative stock changes from this execution.
+  // TODO: For production use, cumulativeStockChanges should be persisted per-session
+  // in the database (e.g., on the AgentSession record) rather than relying on
+  // ephemeral graph state. Currently the threshold resets between separate chat
+  // messages, allowing an attacker to spread stock updates across multiple requests
+  // to circumvent the 100-unit cumulative threshold.
   let stockChangeSum = 0;
   if (
     lastMessage instanceof AIMessage &&

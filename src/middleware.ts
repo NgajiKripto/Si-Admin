@@ -7,6 +7,10 @@ export function middleware(request: NextRequest) {
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
+  // NOTE: 'unsafe-inline' and 'unsafe-eval' are required for Next.js hydration and
+  // inline scripts. This is a known trade-off that reduces CSP's XSS protection.
+  // For a stricter CSP in the future, implement nonce-based script loading via
+  // a custom Document component and pass the nonce to Next.js Script components.
   response.headers.set(
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'"

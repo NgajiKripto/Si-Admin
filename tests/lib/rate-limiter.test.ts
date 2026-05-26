@@ -11,13 +11,13 @@ import { rateLimiter, knowledgeRateLimiter, getRateLimitResponse } from '@/lib/r
 
 describe('rateLimiter', () => {
   it('allows requests under the per-IP limit', () => {
-    const key = `test-ip-${Date.now()}`;
+    const key = `test-ip-${Date.now()}-${Math.random()}`;
     // First request should not be limited
     expect(rateLimiter.isRateLimited(key)).toBe(false);
   });
 
   it('blocks after exceeding per-IP limit of 20', () => {
-    const key = `test-ip-flood-${Date.now()}`;
+    const key = `test-ip-flood-${Date.now()}-${Math.random()}`;
 
     // Make 20 requests (default limit)
     for (let i = 0; i < 20; i++) {
@@ -30,7 +30,7 @@ describe('rateLimiter', () => {
 
 describe('knowledgeRateLimiter', () => {
   it('has 10 request limit', () => {
-    const key = `knowledge-test-${Date.now()}`;
+    const key = `knowledge-test-${Date.now()}-${Math.random()}`;
 
     for (let i = 0; i < 10; i++) {
       knowledgeRateLimiter.isRateLimited(key);
@@ -39,36 +39,36 @@ describe('knowledgeRateLimiter', () => {
   });
 
   it('allows requests under the limit', () => {
-    const key = `knowledge-ok-${Date.now()}`;
+    const key = `knowledge-ok-${Date.now()}-${Math.random()}`;
     expect(knowledgeRateLimiter.isRateLimited(key)).toBe(false);
   });
 });
 
 describe('global rate limiting', () => {
-  it('blocks all requests after 200 total from different IPs', () => {
-    // Each call to isRateLimited increments the global counter.
-    // The rateLimiter was already used above so we need to use a fresh instance.
-    // We cannot create a fresh instance since the class is not exported,
-    // but we can use knowledgeRateLimiter which has its own global counter.
-    // Actually, let's just call isGloballyRateLimited directly on rateLimiter.
-    // The global limit is 200 per window.
+  it('blocks all requests after 200 total from different IPs', async () => {
+    // Use a fresh module instance to avoid shared state from other tests
+    vi.resetModules();
+    vi.doMock('next/server', () => ({
+      NextResponse: {
+        json: (body: unknown, init?: { status?: number }) => ({ body, status: init?.status }),
+      },
+    }));
 
-    // We already used rateLimiter above (about 22 calls from previous tests).
-    // Let's fill up the remaining global capacity.
-    // Instead, test the concept: after many requests, global limit triggers.
-    const uniqueKeys: string[] = [];
-    for (let i = 0; i < 250; i++) {
-      uniqueKeys.push(`global-test-ip-${Date.now()}-${i}`);
-    }
+    const { rateLimiter: freshLimiter } = await import('@/lib/rate-limiter');
 
+    // Fill up to the global capacity (200 requests) using unique keys
+    // so no per-key limit is hit (per-key limit is 20)
     let limitedCount = 0;
-    for (const key of uniqueKeys) {
-      if (rateLimiter.isRateLimited(key)) {
+    for (let i = 0; i < 250; i++) {
+      const key = `global-test-${Date.now()}-${i}`;
+      if (freshLimiter.isRateLimited(key)) {
         limitedCount++;
       }
     }
-    // Some should be limited due to global cap (200 per window)
-    expect(limitedCount).toBeGreaterThan(0);
+
+    // After 200 unique requests, the global limit should kick in
+    // So we expect at least 50 to be limited (250 - 200 = 50)
+    expect(limitedCount).toBeGreaterThanOrEqual(50);
   });
 });
 

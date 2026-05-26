@@ -29,7 +29,6 @@ class RateLimiter {
   private cleanupInterval: ReturnType<typeof setInterval>;
 
   // Global rate limit: 200 requests/minute across all keys
-  private globalTimestamps: number[] = [];
   private globalMaxRequests = 200;
 
   constructor(options?: Partial<RateLimiterOptions>) {
@@ -48,11 +47,6 @@ class RateLimiter {
   }
 
   isRateLimited(key: string): boolean {
-    // Check global rate limit first
-    if (this.isGloballyRateLimited()) {
-      return true;
-    }
-
     const now = Date.now();
     const windowStart = now - this.options.windowMs;
 
@@ -66,26 +60,30 @@ class RateLimiter {
 
     validTimestamps.push(now);
     this.requests.set(key, validTimestamps);
+
+    // Check global rate limit after recording the per-key timestamp
+    if (this.isGloballyRateLimited()) {
+      return true;
+    }
+
     return false;
   }
 
   /**
    * Check if the global rate limit (200 requests/minute across all IPs) has been exceeded.
+   * This is a read-only check that counts all timestamps across all per-key buckets,
+   * avoiding double-counting that would occur with a separate global counter.
    */
   isGloballyRateLimited(): boolean {
     const now = Date.now();
     const windowStart = now - this.options.windowMs;
+    let totalRequests = 0;
 
-    this.globalTimestamps = this.globalTimestamps.filter(
-      (t) => t > windowStart
-    );
-
-    if (this.globalTimestamps.length >= this.globalMaxRequests) {
-      return true;
+    for (const timestamps of this.requests.values()) {
+      totalRequests += timestamps.filter((t) => t > windowStart).length;
     }
 
-    this.globalTimestamps.push(now);
-    return false;
+    return totalRequests >= this.globalMaxRequests;
   }
 
   private cleanup() {
@@ -100,11 +98,6 @@ class RateLimiter {
         this.requests.set(key, valid);
       }
     }
-
-    // Clean up global timestamps too
-    this.globalTimestamps = this.globalTimestamps.filter(
-      (t) => t > windowStart
-    );
   }
 }
 
