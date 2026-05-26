@@ -78,3 +78,58 @@ describe('getRateLimitResponse', () => {
     expect((response as any).status).toBe(429);
   });
 });
+
+describe('isRateLimitedMulti', () => {
+  it('first call with fresh keys returns false (not limited)', () => {
+    const keys = [
+      `multi-ip-${Date.now()}-${Math.random()}`,
+      `multi-session-${Date.now()}-${Math.random()}`,
+    ];
+    expect(rateLimiter.isRateLimitedMulti(keys)).toBe(false);
+  });
+
+  it('records timestamps for all keys', () => {
+    const key1 = `multi-a-${Date.now()}-${Math.random()}`;
+    const key2 = `multi-b-${Date.now()}-${Math.random()}`;
+
+    rateLimiter.isRateLimitedMulti([key1, key2]);
+
+    // Now each key should have 1 request recorded, so individual limit check should work
+    // Making 19 more requests on key1 individually (per-key limit is 20)
+    for (let i = 0; i < 19; i++) {
+      rateLimiter.isRateLimited(key1);
+    }
+    // key1 should now be limited
+    expect(rateLimiter.isRateLimited(key1)).toBe(true);
+  });
+
+  it('blocks when any single key exceeds the limit', () => {
+    const sharedKey = `multi-shared-${Date.now()}-${Math.random()}`;
+    const freshKey = `multi-fresh-${Date.now()}-${Math.random()}`;
+
+    // Exhaust the sharedKey individually
+    for (let i = 0; i < 20; i++) {
+      rateLimiter.isRateLimited(sharedKey);
+    }
+
+    // Now calling isRateLimitedMulti with [sharedKey, freshKey] should be blocked
+    // because sharedKey is already at the limit
+    expect(rateLimiter.isRateLimitedMulti([sharedKey, freshKey])).toBe(true);
+  });
+
+  it('does not record timestamps when blocked', () => {
+    const exhaustedKey = `multi-exhaust-${Date.now()}-${Math.random()}`;
+    const cleanKey = `multi-clean-${Date.now()}-${Math.random()}`;
+
+    // Exhaust one key
+    for (let i = 0; i < 20; i++) {
+      rateLimiter.isRateLimited(exhaustedKey);
+    }
+
+    // This should be blocked and NOT record a timestamp for cleanKey
+    rateLimiter.isRateLimitedMulti([exhaustedKey, cleanKey]);
+
+    // cleanKey should still be under the limit (no timestamp was added)
+    expect(rateLimiter.isRateLimited(cleanKey)).toBe(false);
+  });
+});

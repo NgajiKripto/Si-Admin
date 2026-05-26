@@ -255,15 +255,16 @@ model VectorEmbedding {
 
 /// status field uses: "ACTIVE" | "COMPLETED" | "TIMEOUT"
 model AgentSession {
-  id             String    @id @default(cuid())
-  customerId     String?
-  customer       Customer? @relation(fields: [customerId], references: [id])
-  status         String    @default("ACTIVE")
-  startedAt      DateTime  @default(now())
-  endedAt        DateTime?
-  totalTokens    Int       @default(0)
-  totalLatencyMs Int       @default(0)
-  metadata       String?
+  id                    String    @id @default(cuid())
+  customerId            String?
+  customer              Customer? @relation(fields: [customerId], references: [id])
+  status                String    @default("ACTIVE")
+  startedAt             DateTime  @default(now())
+  endedAt               DateTime?
+  totalTokens           Int       @default(0)
+  totalLatencyMs        Int       @default(0)
+  metadata              String?
+  cumulativeStockChanges Int      @default(0)
 }
 
 /// status field uses: "PENDING" | "APPROVED" | "REJECTED"
@@ -272,6 +273,7 @@ model HumanApprovalQueue {
   sessionId     String
   actionType    String
   actionPayload String
+  payloadHash   String?
   status        String    @default("PENDING")
   requestedAt   DateTime  @default(now())
   resolvedAt    DateTime?

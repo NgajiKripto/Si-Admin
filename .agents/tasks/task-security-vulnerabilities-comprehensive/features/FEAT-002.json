@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix MEDIUM-HIGH and MEDIUM security vulnerabilities: rate limit consolidation endpoint, add CSRF protection, strengthen SQLite file blocking, add approval payload integrity check, enhance input sanitizer for encoded/multilingual attacks, sanitize SSE error messages, and add XSS escaping to output validator.",
+  "status": "completed",
+  "steps": [
+    "MEDIUM-HIGH #7 - LLM resource exhaustion DoS: In src/app/api/agent/memory/consolidate/route.ts, import rateLimiter and getRateLimitResponse from @/lib/rate-limiter. Add rate limiting check using the IP from x-forwarded-for/x-real-ip headers at the top of the POST handler (after auth check).",
+    "MEDIUM #8 - CSRF protection: Create src/lib/csrf.ts with a function `validateCsrf(request: NextRequest): NextResponse | null` that: (1) Checks if method is GET/HEAD/OPTIONS - if so return null (allowed). (2) Gets the Origin header. (3) Gets the Host header. (4) If ALLOWED_ORIGIN env var is set, check Origin matches it. (5) Otherwise, check that Origin's host matches the request's Host header. (6) If no Origin, check Referer header similarly. (7) If neither present or mismatch, return 403 JSON response. Then in src/middleware.ts, import and call validateCsrf for all /api/ routes that are not GET/HEAD/OPTIONS.",
+    "MEDIUM #9 - SQLite file exposure: In src/middleware.ts, add a check near the top: if the request URL path (URL-decoded, case-insensitive) contains '.db', return a 404 response immediately. This supplements the next.config.ts rewrite rules.",
+    "MEDIUM #10 - Approval payload manipulation: In prisma/schema.prisma, add `payloadHash String?` field to HumanApprovalQueue model. In src/lib/langchain/graph/nodes/execute-tool.ts, when creating a HumanApprovalQueue entry, compute a SHA-256 hash of the actionPayload string and store it as payloadHash. In src/app/api/agent/approval/route.ts, before executing an approved action, recompute the hash of actionPayload from the DB and verify it matches the stored payloadHash. If mismatch, reject with error.",
+    "MEDIUM #11 - Multilingual/encoded injection bypass: In src/lib/agent-guard/input-sanitizer.ts, add three new detection functions: (1) detectBase64Injection: detect strings that look like base64 (length >= 20, matches /^[A-Za-z0-9+/=]{20,}$/), decode them, and check if the decoded content matches any BUILTIN_PATTERNS or DELIMITER_PATTERNS. (2) detectDotSplitting: detect patterns like 'ig.no.re pre.vious' by removing dots between letters and checking against BUILTIN_PATTERNS. (3) detectUnicodeTagChars: detect excessive use of Unicode tag characters (U+E0000-U+E007F range) - flag if more than 3 such characters are present. Call all three in sanitizeInput and add matched pattern names to matchedPatterns.",
+    "MEDIUM #12 - Information leakage: In src/app/api/agent/chat/stream/route.ts, in the catch block inside the ReadableStream's start() method (and the outer catch), replace the raw error.message with a generic message when NODE_ENV is 'production'. Only expose the real message in development. Change from `Terjadi kesalahan: ${errorMessage}` to just 'Terjadi kesalahan internal. Silakan coba lagi.' in production.",
+    "MEDIUM #13 - LLM Output XSS: In src/lib/agent-guard/output-validator.ts, add XSS pattern detection and escaping. Before the existing checks, add patterns for: <script (with any attributes), <img followed by onerror=, javascript: URLs, and on*= event handlers (onclick=, onload=, onerror=, onmouseover=, etc.). Replace matched patterns with safe escaped versions (e.g., replace < with &lt; in those specific contexts or strip the dangerous attributes). Add detected issues to the issues array."
+  ],
+  "acceptance_criteria": [
+    "Memory consolidation endpoint returns 429 when rate limited",
+    "CSRF check rejects POST/PUT/DELETE requests with mismatched Origin header to /api/ routes",
+    "Requests with .db in the URL path (any case, URL-encoded or not) get blocked by middleware",
+    "Approval payload hash is computed at creation and verified at execution",
+    "Input sanitizer detects base64-encoded injection payloads",
+    "Input sanitizer detects dot-splitting bypass attempts",
+    "Input sanitizer detects excessive Unicode tag characters",
+    "SSE stream errors in production do not expose internal error details",
+    "Output validator escapes XSS patterns like <script>, onerror=, javascript: in LLM output"
+  ],
+  "verification": [
+    "Run `npx prisma generate` to verify schema changes are valid",
+    "Run `npx vitest run` to verify all tests pass",
+    "Verify TypeScript compiles with `npx tsc --noEmit`"
+  ],
+  "blocked_reason": null,
+  "findings": "All 47 tests pass with ADMIN_SECRET=test-secret. TypeScript compiles cleanly (npx tsc --noEmit). Prisma generate succeeds with the new payloadHash field. The CSRF module uses NextResponse.json which requires the middleware matcher to cover API routes (already does). The XSS patterns use global regexes that need lastIndex reset before replace - handled in implementation."
+}

@@ -1,8 +1,11 @@
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage } from "@langchain/core/messages";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getAgentTools, createGuardedTools } from "@/lib/langchain/tools";
 import type { AgentStateType } from "../state";
+
+const READ_ONLY_TOOLS = ["search_knowledge", "check_stock", "get_customer_history"];
 
 /**
  * Defines which actions require human approval.
@@ -47,6 +50,31 @@ export async function executeToolNode(
     lastMessage.tool_calls &&
     lastMessage.tool_calls.length > 0
   ) {
+    // Block write tools for unauthenticated users
+    if (!state.isAuthenticated) {
+      const writeToolCalls = lastMessage.tool_calls.filter(
+        (tc) => !READ_ONLY_TOOLS.includes(tc.name)
+      );
+      if (writeToolCalls.length > 0) {
+        return {
+          finalResponse: "Maaf, aksi ini memerlukan autentikasi admin. Silakan hubungi admin untuk melakukan perubahan data.",
+          currentStep: "execute_tool",
+        };
+      }
+    }
+
+    // Load cumulative stock changes from DB for persistence across requests
+    let dbCumulativeStock = 0;
+    if (state.sessionId) {
+      const session = await prisma.agentSession.findUnique({
+        where: { id: state.sessionId },
+        select: { cumulativeStockChanges: true },
+      });
+      if (session) {
+        dbCumulativeStock = session.cumulativeStockChanges;
+      }
+    }
+
     for (const toolCall of lastMessage.tool_calls) {
       const toolName = toolCall.name;
       const toolArgs = toolCall.args as Record<string, unknown>;
@@ -55,18 +83,19 @@ export async function executeToolNode(
         requiresApproval(
           toolName,
           toolArgs,
-          state.cumulativeStockChanges ?? 0
+          dbCumulativeStock
         )
       ) {
         // Create an entry in HumanApprovalQueue instead of executing
+        const payloadString = JSON.stringify({ toolName, args: toolArgs });
+        const payloadHash = createHash("sha256").update(payloadString).digest("hex");
+
         const queueEntry = await prisma.humanApprovalQueue.create({
           data: {
             sessionId: state.sessionId || "unknown",
             actionType: toolName,
-            actionPayload: JSON.stringify({
-              toolName,
-              args: toolArgs,
-            }),
+            actionPayload: payloadString,
+            payloadHash,
             status: "PENDING",
           },
         });
@@ -94,12 +123,7 @@ export async function executeToolNode(
 
   const result = await toolNode.invoke(state);
 
-  // Calculate cumulative stock changes from this execution.
-  // TODO: For production use, cumulativeStockChanges should be persisted per-session
-  // in the database (e.g., on the AgentSession record) rather than relying on
-  // ephemeral graph state. Currently the threshold resets between separate chat
-  // messages, allowing an attacker to spread stock updates across multiple requests
-  // to circumvent the 100-unit cumulative threshold.
+  // Calculate cumulative stock changes from this execution and persist to DB.
   let stockChangeSum = 0;
   if (
     lastMessage instanceof AIMessage &&
@@ -112,6 +136,13 @@ export async function executeToolNode(
         stockChangeSum += Math.abs(args.quantity as number);
       }
     }
+  }
+
+  if (stockChangeSum > 0 && state.sessionId) {
+    await prisma.agentSession.update({
+      where: { id: state.sessionId },
+      data: { cumulativeStockChanges: { increment: stockChangeSum } },
+    });
   }
 
   return {

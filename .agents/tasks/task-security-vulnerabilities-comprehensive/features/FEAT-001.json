@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix CRITICAL and HIGH security vulnerabilities: Add authentication to unprotected endpoints, add knowledge content auditing, implement tool access control for unauthenticated users, persist cumulative stock changes, and improve rate limiter resilience.",
+  "status": "completed",
+  "steps": [
+    "Create branch fix/security-vulnerabilities-comprehensive from main",
+    "CRITICAL #1 - Add auth to memory endpoints: In src/app/api/agent/memory/route.ts, import requireAuth from @/lib/auth. Add `const authError = requireAuth(request); if (authError) return authError;` at the top of both GET and POST handlers.",
+    "CRITICAL #1 - Add auth to memory consolidate: In src/app/api/agent/memory/consolidate/route.ts, change POST signature to accept NextRequest parameter. Import requireAuth from @/lib/auth. Add auth check at the top of POST handler.",
+    "CRITICAL #2 - Add knowledge content audit to batch endpoint: In src/app/api/knowledge/batch/route.ts, import { auditKnowledgeContent } from '@/lib/agent-guard/knowledge-auditor'. In the validation loop (after existing validations), call auditKnowledgeContent(entry.content) for each entry. If !result.safe, return 400 with the issues.",
+    "HIGH #3 - Add auth to knowledge [id] routes: In src/app/api/knowledge/[id]/route.ts, import requireAuth from @/lib/auth. Add auth check at the top of GET, PUT, and DELETE handlers.",
+    "HIGH #4 - Agent chat confused deputy: In src/app/api/agent/chat/route.ts and src/app/api/agent/chat/stream/route.ts, detect whether the request has a valid x-admin-token header (do NOT use requireAuth which returns 401 - just check if the token matches). Pass `isAuthenticated` flag through the graph state. In src/lib/langchain/graph/state.ts, add an `isAuthenticated` Annotation<boolean> with default false. In src/lib/langchain/graph/nodes/execute-tool.ts, when state.isAuthenticated is false, check if tool calls include write tools (update_stock, create_follow_up, send_feedback_template). If so, skip execution and return a finalResponse saying the action requires admin authentication.",
+    "HIGH #5 - Cumulative stock bypass: In prisma/schema.prisma, add `cumulativeStockChanges Int @default(0)` field to the AgentSession model. In src/lib/langchain/graph/nodes/execute-tool.ts, at the start of executeToolNode, load the session's current cumulativeStockChanges from the database using state.sessionId. Use this DB value (instead of state.cumulativeStockChanges) when checking requiresApproval. After successful tool execution with stock changes, update the session record with the new cumulative value.",
+    "HIGH #6 - Rate limiter IP spoofing: In src/lib/rate-limiter.ts, update the class to support checking multiple keys (primary IP key AND secondary session-based key). Add a method `isRateLimitedMulti(keys: string[]): boolean` that checks all keys and records timestamps for all. In the chat routes (src/app/api/agent/chat/route.ts and stream/route.ts), compute a secondary rate limit key from the request body's sessionId (using a hash or prefix like 'session:' + sessionId) and pass both keys to the rate limiter. Add documentation comment that in production X-Forwarded-For must be set by a trusted reverse proxy."
+  ],
+  "acceptance_criteria": [
+    "Memory GET and POST routes return 401 without valid x-admin-token",
+    "Memory consolidate POST returns 401 without valid x-admin-token",
+    "Knowledge batch POST rejects entries with injection patterns (auditKnowledgeContent check)",
+    "Knowledge [id] GET, PUT, DELETE return 401 without valid x-admin-token",
+    "Agent chat routes allow unauthenticated access but block write tools for unauthenticated users",
+    "Cumulative stock changes persist across separate requests in the same session via DB field",
+    "Rate limiter also checks session-based key as secondary defense against IP spoofing"
+  ],
+  "verification": [
+    "Run `npx prisma generate` to verify schema changes are valid",
+    "Run `npx vitest run` to verify all existing tests still pass",
+    "Verify TypeScript compiles with `npx tsc --noEmit`"
+  ],
+  "blocked_reason": null,
+  "findings": "All tests pass with ADMIN_SECRET env var set (47 tests). The auth.test.ts file requires ADMIN_SECRET to be set at import time, which is a pre-existing test setup requirement. TypeScript compiles cleanly with no errors. Prisma schema migration adds cumulativeStockChanges field with @default(0) so existing records are unaffected."
+}

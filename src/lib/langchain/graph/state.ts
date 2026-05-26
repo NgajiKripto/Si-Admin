@@ -39,6 +39,10 @@ export const AgentState = Annotation.Root({
     reducer: (prev, val) => prev + val,
     default: () => 0,
   }),
+  isAuthenticated: Annotation<boolean>({
+    reducer: (_, val) => val,
+    default: () => false,
+  }),
 });
 
 export type AgentStateType = typeof AgentState.State;

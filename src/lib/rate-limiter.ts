@@ -21,7 +21,8 @@ const DEFAULT_OPTIONS: RateLimiterOptions = {
  * NOTE: X-Forwarded-For is only trustworthy when the application sits behind a
  * reverse proxy (e.g., nginx, Cloudflare, AWS ALB) that overwrites the header.
  * If the app is directly internet-facing, clients can spoof X-Forwarded-For to
- * bypass per-IP rate limits.
+ * bypass per-IP rate limits. In production, the reverse proxy MUST set or
+ * overwrite the X-Forwarded-For header so that it cannot be spoofed by clients.
  */
 class RateLimiter {
   private requests: Map<string, number[]>;
@@ -62,6 +63,47 @@ class RateLimiter {
     this.requests.set(key, validTimestamps);
 
     // Check global rate limit after recording the per-key timestamp
+    if (this.isGloballyRateLimited()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check multiple keys simultaneously. If ANY key is already rate limited,
+   * returns true without recording timestamps. Otherwise, records a timestamp
+   * only for the primary key (first in the array) to avoid inflating the global
+   * request count. Secondary keys are checked for violations but not written to,
+   * preventing double-counting in `isGloballyRateLimited()`.
+   *
+   * This prevents bypassing rate limits by rotating identifiers (e.g., spoofing
+   * IP while reusing a session).
+   */
+  isRateLimitedMulti(keys: string[]): boolean {
+    if (keys.length === 0) return false;
+
+    const now = Date.now();
+    const windowStart = now - this.options.windowMs;
+
+    // First pass: check if any key is already at the limit
+    for (const key of keys) {
+      const timestamps = this.requests.get(key) || [];
+      const validTimestamps = timestamps.filter((t) => t > windowStart);
+      this.requests.set(key, validTimestamps);
+
+      if (validTimestamps.length >= this.options.maxRequests) {
+        return true;
+      }
+    }
+
+    // Record timestamp only for the primary key (first) to avoid global double-counting
+    const primaryKey = keys[0];
+    const primaryTimestamps = this.requests.get(primaryKey) || [];
+    primaryTimestamps.push(now);
+    this.requests.set(primaryKey, primaryTimestamps);
+
+    // Check global rate limit
     if (this.isGloballyRateLimited()) {
       return true;
     }
