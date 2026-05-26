@@ -61,3 +61,49 @@ describe('validateOutput', () => {
     expect(result.issues).toEqual([]);
   });
 });
+
+describe('XSS pattern detection and escaping', () => {
+  it('detects and escapes <script> tag', () => {
+    const result = validateOutput('<script>alert("xss")</script>', []);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.includes('XSS'))).toBe(true);
+    expect(result.sanitizedOutput).not.toContain('<script>');
+    expect(result.sanitizedOutput).toContain('&lt;script');
+  });
+
+  it('detects <img onerror=...>', () => {
+    const result = validateOutput('<img src=x onerror=alert(1)>', []);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.includes('XSS') && i.includes('img'))).toBe(true);
+  });
+
+  it('detects javascript: URL', () => {
+    const result = validateOutput('Click here: javascript:alert(1)', []);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.includes('javascript'))).toBe(true);
+  });
+
+  it('detects onclick= event handler', () => {
+    const result = validateOutput('<div onclick="alert(1)">click me</div>', []);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.includes('event handler'))).toBe(true);
+  });
+
+  it('detects <iframe> tag', () => {
+    const result = validateOutput('<iframe src="http://evil.com"></iframe>', []);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.includes('iframe'))).toBe(true);
+  });
+
+  it('normal text with < operator does not false-positive', () => {
+    const result = validateOutput('Use < operator for comparison: if (a < b)', []);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('normal text mentioning script concept does not false-positive', () => {
+    const result = validateOutput('The script completed successfully with no errors.', []);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+});
