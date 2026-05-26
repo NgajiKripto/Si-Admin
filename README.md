@@ -264,6 +264,62 @@ echo '{"output": "agent response"}' | bash scripts/guard/validate-output.sh
 
 ---
 
+## Keamanan & Kualitas Kode
+
+Selain Agent Guard, Si-Admin menerapkan lapisan keamanan dan peningkatan kualitas kode berikut:
+
+### 1. Authentication Middleware
+
+| Aspek | Detail |
+|:------|:-------|
+| Mekanisme | Token-based authentication via header `x-admin-token` |
+| Cakupan | Semua route API admin dilindungi oleh middleware auth |
+| Modul | Sentralisasi di `src/lib/auth.ts` |
+| Production | Fail fast jika environment variable `ADMIN_SECRET` belum di-set |
+| Endpoint chat | Endpoint chat (untuk end user) dilindungi oleh rate limiting, bukan token |
+
+### 2. Rate Limiting
+
+| Aspek | Detail |
+|:------|:-------|
+| Algoritma | In-memory sliding-window rate limiter |
+| Konfigurasi | `src/lib/rate-limiter.ts` |
+| Identifikasi | Key diambil dari header `x-forwarded-for` / `x-real-ip` (server-side) |
+| Default | 20 request per 60 detik per IP |
+| Catatan | In-memory only (cocok untuk single-process; gunakan Redis untuk production scale) |
+
+### 3. Input Validation
+
+| Endpoint | Validasi |
+|:---------|:---------|
+| Chat | Panjang pesan maksimal 5000 karakter |
+| Stock API | Mendukung paginasi (`page`, `limit` params) |
+| Knowledge API | Validasi `title` (maks 500 karakter), `content` (maks 50000 karakter), dan `category` |
+
+### 4. Transactional Stock Updates
+
+Pengecekan kuantitas stok dan update sekarang dilakukan secara atomik di dalam **Prisma transaction**. Ini menghilangkan race condition di mana request bersamaan bisa menyebabkan stok negatif.
+
+### 5. Async Agent Guard Runner
+
+| Aspek | Detail |
+|:------|:-------|
+| File | `src/lib/agent-guard/runner.ts` |
+| Perubahan | Menggunakan async `child_process.execFile` menggantikan blocking `execSync` |
+| Manfaat | Mencegah blocking event loop saat eksekusi guard |
+| Fallback | TypeScript fallback tetap berfungsi jika Python/Shell tidak tersedia |
+
+### 6. Unit Tests
+
+| Aspek | Detail |
+|:------|:-------|
+| Framework | Vitest |
+| Lokasi | `tests/agent-guard/` |
+| Cakupan | input-sanitizer, scope-classifier, output-validator, action-permissions |
+| Perintah | `npx vitest run` |
+
+---
+
 ## Agent Orchestration (LangGraph)
 
 Si-Admin menggunakan **LangGraph StateGraph** untuk mengorkestrasi alur kerja agent. Setiap request melewati serangkaian node yang terstruktur:
@@ -701,6 +757,7 @@ npm install
 # Setup environment variables
 cp .env.example .env
 # Edit .env dan isi OPENAI_API_KEY (wajib untuk fitur AI agent)
+# Set ADMIN_SECRET di .env untuk autentikasi API admin
 
 # Setup database
 npx prisma generate
@@ -727,6 +784,7 @@ Buka [http://localhost:3000](http://localhost:3000) di browser untuk mengakses d
 | `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Model untuk vector embeddings |
 | `AGENT_TEMPERATURE` | `0.3` | Temperature LLM (0 = deterministik, 1 = kreatif) |
 | `AGENT_MAX_ITERATIONS` | `10` | Maksimal iterasi tool calling per request |
+| `ADMIN_SECRET` | - | **(Wajib untuk production)** Token autentikasi admin API routes |
 
 File `.env` di root project:
 
@@ -741,6 +799,9 @@ OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 # Agent Configuration
 AGENT_TEMPERATURE="0.3"
 AGENT_MAX_ITERATIONS="10"
+
+# Auth (Wajib untuk production)
+ADMIN_SECRET="your-secret-token-here"
 ```
 
 ---
@@ -766,6 +827,7 @@ Selain model-model dasar (Customer, Conversation, Message, Knowledge, FollowUp, 
 | `npm run build` | Build aplikasi untuk production |
 | `npm run start` | Jalankan production server |
 | `npm run lint` | Jalankan ESLint untuk code quality |
+| `npx vitest run` | Jalankan unit tests |
 
 ---
 
