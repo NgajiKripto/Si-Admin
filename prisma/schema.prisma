@@ -273,6 +273,7 @@ model HumanApprovalQueue {
   sessionId     String
   actionType    String
   actionPayload String
+  payloadHash   String?
   status        String    @default("PENDING")
   requestedAt   DateTime  @default(now())
   resolvedAt    DateTime?

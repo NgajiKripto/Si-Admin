@@ -18,6 +18,30 @@ export function validateOutput(
   const issues: string[] = [];
   let sanitizedOutput = output;
 
+  // XSS pattern detection and escaping
+  const XSS_PATTERNS: { pattern: RegExp; label: string }[] = [
+    { pattern: /<script[\s>]/gi, label: "XSS: <script> tag" },
+    { pattern: /<\/script>/gi, label: "XSS: </script> tag" },
+    { pattern: /<img[^>]+onerror\s*=/gi, label: "XSS: <img onerror>" },
+    { pattern: /javascript\s*:/gi, label: "XSS: javascript: URL" },
+    { pattern: /\bon\w+\s*=\s*["']/gi, label: "XSS: event handler attribute" },
+    { pattern: /<iframe[\s>]/gi, label: "XSS: <iframe> tag" },
+    { pattern: /<object[\s>]/gi, label: "XSS: <object> tag" },
+    { pattern: /<embed[\s>]/gi, label: "XSS: <embed> tag" },
+  ];
+
+  for (const { pattern, label } of XSS_PATTERNS) {
+    if (pattern.test(sanitizedOutput)) {
+      issues.push(label);
+      // Reset lastIndex for global regex
+      pattern.lastIndex = 0;
+      // Escape by replacing < with &lt; in matched patterns
+      sanitizedOutput = sanitizedOutput.replace(pattern, (match) =>
+        match.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      );
+    }
+  }
+
   // Check blocked output patterns (case-insensitive)
   for (const pattern of blockedOutputPatterns) {
     try {

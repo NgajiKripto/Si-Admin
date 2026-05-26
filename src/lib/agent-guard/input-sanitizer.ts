@@ -109,6 +109,71 @@ function detectMultiLanguageMixing(input: string): boolean {
 }
 
 /**
+ * Detect base64-encoded injection attempts.
+ * Checks strings that look like base64, decodes them, and checks for injection patterns.
+ */
+function detectBase64Injection(input: string): string | null {
+  // Find potential base64 strings (at least 20 chars, valid base64 charset)
+  const base64Pattern = /[A-Za-z0-9+/=]{20,}/g;
+  const matches = input.match(base64Pattern);
+  if (!matches) return null;
+
+  for (const match of matches) {
+    try {
+      // Validate it's proper base64 (length must be multiple of 4 after trimming =)
+      const decoded = Buffer.from(match, "base64").toString("utf-8");
+      // Check if decoded content is readable text (not binary garbage)
+      if (!/^[\x20-\x7E\s]+$/.test(decoded)) continue;
+
+      // Check against builtin patterns
+      for (const pattern of BUILTIN_PATTERNS) {
+        if (decoded.toLowerCase().includes(pattern.toLowerCase())) {
+          return `base64-encoded injection: "${pattern}"`;
+        }
+      }
+      // Check against delimiter patterns
+      for (const regex of DELIMITER_PATTERNS) {
+        if (regex.test(decoded)) {
+          return `base64-encoded delimiter: "${regex.source}"`;
+        }
+      }
+    } catch {
+      // Not valid base64, skip
+    }
+  }
+  return null;
+}
+
+/**
+ * Detect dot-splitting bypass attempts.
+ * E.g., "ig.no.re pre.vious" -> "ignore previous"
+ */
+function detectDotSplitting(input: string): string | null {
+  // Remove dots between letters (not between digits or at word boundaries)
+  const withoutDots = input.replace(/([a-zA-Z])\.([a-zA-Z])/g, "$1$2");
+  if (withoutDots === input) return null; // No dots between letters
+
+  // Check the de-dotted version against builtin patterns
+  for (const pattern of BUILTIN_PATTERNS) {
+    if (withoutDots.toLowerCase().includes(pattern.toLowerCase())) {
+      return `dot-splitting bypass: "${pattern}"`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Detect excessive Unicode tag characters (U+E0000-U+E007F).
+ * These can be used to hide content from text processing.
+ */
+function detectUnicodeTagChars(input: string): boolean {
+  // Unicode tag characters range: U+E0000 to U+E007F
+  const tagCharPattern = /[\u{E0000}-\u{E007F}]/gu;
+  const matches = input.match(tagCharPattern);
+  return matches !== null && matches.length > 3;
+}
+
+/**
  * Validate regex safety to prevent ReDoS attacks.
  * Returns true if the pattern is safe to use as a regex.
  */
@@ -170,6 +235,23 @@ export function sanitizeInput(
   // Detect multi-language script mixing within words
   if (detectMultiLanguageMixing(sanitizedInput)) {
     matchedPatterns.push("multi-language mixing detected");
+  }
+
+  // Detect base64-encoded injection attempts
+  const base64Issue = detectBase64Injection(sanitizedInput);
+  if (base64Issue) {
+    matchedPatterns.push(base64Issue);
+  }
+
+  // Detect dot-splitting bypass
+  const dotSplitIssue = detectDotSplitting(sanitizedInput);
+  if (dotSplitIssue) {
+    matchedPatterns.push(dotSplitIssue);
+  }
+
+  // Detect Unicode tag characters
+  if (detectUnicodeTagChars(sanitizedInput)) {
+    matchedPatterns.push("excessive Unicode tag characters (U+E0000-U+E007F)");
   }
 
   // Check config-defined blocked patterns (case-insensitive)

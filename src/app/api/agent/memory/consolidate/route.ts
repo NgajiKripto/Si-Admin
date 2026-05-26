@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { rateLimiter, getRateLimitResponse } from "@/lib/rate-limiter";
 import {
   summarizeWorkingMemories,
   extractSemanticFacts,
@@ -17,6 +18,12 @@ const ARCHIVED_TIERS = {
 export async function POST(request: NextRequest) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  const rateLimitKey = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip") || "anonymous";
+  if (rateLimiter.isRateLimited(`consolidate:${rateLimitKey}`)) {
+    return getRateLimitResponse();
+  }
 
   try {
     const now = new Date();

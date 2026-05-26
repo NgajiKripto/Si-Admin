@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "fix",
   "description": "Fix MEDIUM-HIGH and MEDIUM security vulnerabilities: rate limit consolidation endpoint, add CSRF protection, strengthen SQLite file blocking, add approval payload integrity check, enhance input sanitizer for encoded/multilingual attacks, sanitize SSE error messages, and add XSS escaping to output validator.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "MEDIUM-HIGH #7 - LLM resource exhaustion DoS: In src/app/api/agent/memory/consolidate/route.ts, import rateLimiter and getRateLimitResponse from @/lib/rate-limiter. Add rate limiting check using the IP from x-forwarded-for/x-real-ip headers at the top of the POST handler (after auth check).",
     "MEDIUM #8 - CSRF protection: Create src/lib/csrf.ts with a function `validateCsrf(request: NextRequest): NextResponse | null` that: (1) Checks if method is GET/HEAD/OPTIONS - if so return null (allowed). (2) Gets the Origin header. (3) Gets the Host header. (4) If ALLOWED_ORIGIN env var is set, check Origin matches it. (5) Otherwise, check that Origin's host matches the request's Host header. (6) If no Origin, check Referer header similarly. (7) If neither present or mismatch, return 403 JSON response. Then in src/middleware.ts, import and call validateCsrf for all /api/ routes that are not GET/HEAD/OPTIONS.",

@@ -1,5 +1,6 @@
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage } from "@langchain/core/messages";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getAgentTools, createGuardedTools } from "@/lib/langchain/tools";
 import type { AgentStateType } from "../state";
@@ -86,14 +87,15 @@ export async function executeToolNode(
         )
       ) {
         // Create an entry in HumanApprovalQueue instead of executing
+        const payloadString = JSON.stringify({ toolName, args: toolArgs });
+        const payloadHash = createHash("sha256").update(payloadString).digest("hex");
+
         const queueEntry = await prisma.humanApprovalQueue.create({
           data: {
             sessionId: state.sessionId || "unknown",
             actionType: toolName,
-            actionPayload: JSON.stringify({
-              toolName,
-              args: toolArgs,
-            }),
+            actionPayload: payloadString,
+            payloadHash,
             status: "PENDING",
           },
         });

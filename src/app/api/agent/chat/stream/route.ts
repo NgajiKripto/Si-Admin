@@ -155,11 +155,14 @@ export async function POST(request: NextRequest) {
             )
           );
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
+          const isDev = process.env.NODE_ENV !== "production";
+          const errorDetail = error instanceof Error ? error.message : "Unknown error";
+          const safeMessage = isDev
+            ? `Terjadi kesalahan: ${errorDetail}`
+            : "Terjadi kesalahan internal. Silakan coba lagi.";
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ type: "error", content: `Terjadi kesalahan: ${errorMessage}` })}\n\n`
+              `data: ${JSON.stringify({ type: "error", content: safeMessage })}\n\n`
             )
           );
         } finally {
@@ -176,11 +179,14 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const isDev = process.env.NODE_ENV !== "production";
+    const errorDetail = error instanceof Error ? error.message : "Unknown error";
+    const safeMessage = isDev
+      ? `Terjadi kesalahan: ${errorDetail}`
+      : "Terjadi kesalahan internal. Silakan coba lagi.";
     return new Response(
       encoder.encode(
-        `data: ${JSON.stringify({ type: "error", content: `Terjadi kesalahan: ${errorMessage}` })}\n\n`
+        `data: ${JSON.stringify({ type: "error", content: safeMessage })}\n\n`
       ),
       {
         status: 500,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getAgentTools } from "@/lib/langchain/tools";
 import { requireAuth } from "@/lib/auth";
@@ -81,6 +82,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "approve") {
+      // Verify payload integrity
+      if (queueItem.payloadHash) {
+        const computedHash = createHash("sha256").update(queueItem.actionPayload).digest("hex");
+        if (computedHash !== queueItem.payloadHash) {
+          return NextResponse.json(
+            { error: "Integritas payload gagal diverifikasi. Aksi ditolak." },
+            { status: 400 }
+          );
+        }
+      }
+
       // Update status to APPROVED
       await prisma.humanApprovalQueue.update({
         where: { id },
