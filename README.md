@@ -831,6 +831,194 @@ Selain model-model dasar (Customer, Conversation, Message, Knowledge, FollowUp, 
 
 ---
 
+## Deployment
+
+### Prasyarat
+
+Sebelum deploy, pastikan:
+
+| Item | Keterangan |
+|:-----|:-----------|
+| `OPENAI_API_KEY` | Wajib untuk fitur AI agent |
+| `ADMIN_SECRET` | Wajib untuk production (token autentikasi API admin) |
+| SSL/HTTPS | Wajib agar header `x-admin-token` aman saat transit |
+| Database | SQLite (VPS/Docker) atau Turso/PostgreSQL (serverless) |
+
+### Option 1: VPS (DigitalOcean, Hetzner, AWS EC2)
+
+Paling cocok untuk production karena filesystem persisten mendukung SQLite secara langsung.
+
+```bash
+# 1. SSH ke server
+ssh root@your-server-ip
+
+# 2. Install Node.js 22
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 3. Clone repository
+git clone https://github.com/NgajiKripto/Si-Admin.git
+cd Si-Admin
+npm install
+
+# 4. Setup environment
+cp .env.example .env
+# Edit .env: isi OPENAI_API_KEY dan ADMIN_SECRET
+
+# 5. Setup database
+npx prisma generate
+npx prisma db push
+npx prisma db seed
+
+# 6. Build production
+npm run build
+
+# 7. Jalankan dengan PM2
+npm install -g pm2
+pm2 start npm --name "si-admin" -- start
+pm2 save
+pm2 startup
+```
+
+**Nginx Reverse Proxy:**
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+**SSL dengan Certbot:**
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com
+```
+
+### Option 2: Docker
+
+```dockerfile
+# Dockerfile
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx prisma generate
+RUN npm run build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
+
+RUN mkdir -p /data
+ENV DATABASE_URL="file:/data/si-admin.db"
+
+EXPOSE 3000
+CMD ["sh", "-c", "npx prisma db push && npm start"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  si-admin:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ADMIN_SECRET=${ADMIN_SECRET}
+      - DATABASE_URL=file:/data/si-admin.db
+    volumes:
+      - si-admin-data:/data
+    restart: unless-stopped
+
+volumes:
+  si-admin-data:
+```
+
+```bash
+# Deploy dengan Docker Compose
+docker compose up -d
+
+# Seed database (pertama kali)
+docker compose exec si-admin npx prisma db seed
+```
+
+### Option 3: Vercel
+
+> **Catatan:** SQLite tidak kompatibel dengan Vercel (serverless, filesystem ephemeral). Perlu migrasi ke database cloud seperti Turso atau PostgreSQL (Neon/Supabase).
+
+**Langkah-langkah:**
+
+1. Push repository ke GitHub
+2. Buka [vercel.com](https://vercel.com), login dengan GitHub
+3. Klik "Add New Project" dan pilih repository `Si-Admin`
+4. Set environment variables di dashboard Vercel:
+   ```
+   OPENAI_API_KEY=sk-...
+   ADMIN_SECRET=your-strong-secret-token
+   OPENAI_MODEL=gpt-4o-mini
+   OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+   AGENT_TEMPERATURE=0.3
+   AGENT_MAX_ITERATIONS=10
+   TURSO_DATABASE_URL=libsql://your-db.turso.io
+   TURSO_AUTH_TOKEN=your-turso-token
+   ```
+5. Deploy
+
+**Migrasi ke Turso (SQLite cloud):**
+
+```bash
+# Install Turso CLI
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Login dan buat database
+turso auth login
+turso db create si-admin
+turso db show si-admin --url
+turso db tokens create si-admin
+```
+
+### Rekomendasi Platform
+
+| Skenario | Platform | Alasan |
+|:---------|:---------|:-------|
+| Prototype/demo | VPS + SQLite | Paling murah, SQLite langsung jalan |
+| Production kecil | VPS + Docker | Mudah maintain, persistent storage |
+| Production scale | Vercel + Turso | Auto-scaling, zero ops |
+| Self-hosted enterprise | Docker + PostgreSQL | Full control, database proper |
+
+### Checklist Production
+
+- [ ] Set `OPENAI_API_KEY` (valid dan memiliki saldo)
+- [ ] Set `ADMIN_SECRET` (gunakan random string min. 32 karakter)
+- [ ] HTTPS/SSL aktif
+- [ ] Database sudah di-migrate (`npx prisma db push`)
+- [ ] Backup strategy untuk database
+- [ ] Monitor disk space (untuk SQLite)
+- [ ] Rate limit sesuai kebutuhan traffic (default: 20 req/60s per IP)
+
+---
+
 ## Kontribusi
 
 Kontribusi sangat diterima! Berikut panduan singkat:
