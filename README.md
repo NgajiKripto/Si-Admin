@@ -278,6 +278,16 @@ Selain Agent Guard, Si-Admin menerapkan lapisan keamanan dan peningkatan kualita
 | Production | Fail fast jika environment variable `ADMIN_SECRET` belum di-set |
 | Endpoint chat | Endpoint chat (untuk end user) dilindungi oleh rate limiting, bukan token |
 
+**Cakupan endpoint yang dilindungi (diperluas):**
+
+| Endpoint | Method | Keterangan |
+|:---------|:-------|:-----------|
+| `/api/agent/memory` | GET, POST | Akses dan penyimpanan memori agent |
+| `/api/agent/memory/consolidate` | POST | Konsolidasi memori (LLM-powered) |
+| `/api/knowledge/[id]` | GET, PUT, DELETE | Operasi per-entri knowledge base |
+| `/api/knowledge/batch` | POST | Batch import knowledge entries |
+| Semua route admin lainnya | * | Endpoint admin yang sudah ada |
+
 ### 2. Rate Limiting
 
 | Aspek | Detail |
@@ -286,7 +296,13 @@ Selain Agent Guard, Si-Admin menerapkan lapisan keamanan dan peningkatan kualita
 | Konfigurasi | `src/lib/rate-limiter.ts` |
 | Identifikasi | Key diambil dari header `x-forwarded-for` / `x-real-ip` (server-side) |
 | Default | 20 request per 60 detik per IP |
+| Multi-Key | Mendukung pengecekan beberapa key sekaligus (IP + session) via `isRateLimitedMulti` |
+| Bypass Prevention | Mencegah bypass rate limit via rotasi IP jika session ID diketahui |
 | Catatan | In-memory only (cocok untuk single-process; gunakan Redis untuk production scale) |
+
+**Endpoint yang dilindungi rate limiter:**
+- `/api/agent/chat` dan `/api/agent/chat/stream` (per IP)
+- `/api/agent/memory/consolidate` (per IP + session)
 
 ### 3. Input Validation
 
@@ -317,6 +333,93 @@ Pengecekan kuantitas stok dan update sekarang dilakukan secara atomik di dalam *
 | Lokasi | `tests/agent-guard/` |
 | Cakupan | input-sanitizer, scope-classifier, output-validator, action-permissions |
 | Perintah | `npx vitest run` |
+
+### 7. CSRF Protection
+
+| Aspek | Detail |
+|:------|:-------|
+| Modul | `src/lib/csrf.ts` |
+| Mekanisme | Validasi header `Origin` / `Referer` terhadap header `Host` atau env `ALLOWED_ORIGIN` |
+| Cakupan | Semua request mutating (POST, PUT, DELETE, PATCH) ke API routes |
+| Konfigurasi | Variable environment `ALLOWED_ORIGIN` untuk strict enforcement di production |
+| Perilaku | Request tanpa Origin/Referer yang valid akan ditolak dengan status 403 |
+
+### 8. Confused Deputy Protection (Tool Access Control)
+
+Sistem membedakan akses tool berdasarkan status autentikasi pengguna:
+
+| Kategori | Tools | Akses |
+|:---------|:------|:------|
+| Read-only (publik) | `search_knowledge`, `check_stock`, `get_customer_history` | Semua pengguna |
+| Write (terproteksi) | `update_stock`, `create_follow_up`, `send_feedback_template` | Hanya pengguna terotentikasi |
+
+- Flag `isAuthenticated` diteruskan melalui graph state LangGraph
+- Pengguna yang tidak terotentikasi hanya dapat menggunakan tool baca (read-only)
+- Mencegah serangan confused deputy di mana agent dimanipulasi untuk menjalankan aksi tulis tanpa otorisasi
+
+### 9. Payload Integrity Verification (Approval Queue)
+
+| Aspek | Detail |
+|:------|:-------|
+| Mekanisme | SHA-256 hash (`payloadHash`) dihitung saat membuat entri approval queue |
+| Verifikasi | Hash diverifikasi sebelum mengeksekusi aksi yang telah di-approve |
+| Penolakan | Entri tanpa hash akan ditolak (mencegah tampering) |
+| Modul | Terintegrasi di `HumanApprovalQueue` Prisma model |
+
+Alur:
+1. Agent membuat request approval dengan payload tertentu
+2. Sistem menghitung SHA-256 hash dari payload dan menyimpannya bersama entri
+3. Saat admin meng-approve, hash payload diverifikasi ulang
+4. Jika hash tidak cocok atau tidak ada, eksekusi ditolak
+
+### 10. Enhanced Input Sanitizer
+
+Selain deteksi pola injeksi standar, input sanitizer kini mendeteksi:
+
+| Teknik Bypass | Deskripsi |
+|:--------------|:----------|
+| Base64-encoded injection | Mendeteksi payload injeksi yang di-encode dalam format Base64 |
+| Dot-splitting bypass | Mendeteksi pola pemecahan kata dengan titik (mis. "ig.no.re pre.vious") |
+| Unicode tag characters | Mendeteksi karakter Unicode tag (U+E0000 - U+E007F) yang digunakan untuk menyembunyikan instruksi |
+
+### 11. XSS Output Protection
+
+Output validator kini melakukan escaping terhadap pola XSS sebelum respons dikirim ke frontend:
+
+| Pola | Tindakan |
+|:-----|:---------|
+| `<script>` | Di-escape untuk mencegah eksekusi script |
+| `<img onerror=...>` | Di-escape untuk mencegah event handler injection |
+| `javascript:` URL | Di-escape untuk mencegah navigasi berbahaya |
+| `on*=` event handlers | Di-escape untuk mencegah inline event injection |
+| `<iframe>` | Di-escape untuk mencegah embedding konten berbahaya |
+
+### 12. SQLite File Exposure Prevention (Enhanced)
+
+| Aspek | Detail |
+|:------|:-------|
+| Modul | Middleware Next.js |
+| Mekanisme | Memblokir path `.db` (case-insensitive, URL-decoded) |
+| Regex | Properly anchored regex untuk mencegah bypass via encoding tricks |
+| Cakupan | Semua request ke file database SQLite |
+
+### 13. Production Error Masking
+
+| Aspek | Detail |
+|:------|:-------|
+| Kondisi | Aktif saat `NODE_ENV=production` |
+| Cakupan | SSE stream errors dan error responses API |
+| Perilaku | Detail error internal tidak pernah dikirimkan ke end user |
+| Development | Di mode development, detail error tetap ditampilkan untuk debugging |
+
+### 14. Cumulative Stock Change Persistence
+
+| Aspek | Detail |
+|:------|:-------|
+| Field | `cumulativeStockChanges` pada model `AgentSession` |
+| Fungsi | Melacak total perubahan stok kumulatif per sesi |
+| Keamanan | Mencegah bypass threshold persetujuan admin via split-request (memecah perubahan besar menjadi beberapa request kecil) |
+| Persistensi | Disimpan di database, bertahan antar request dalam satu sesi |
 
 ---
 
@@ -785,6 +888,7 @@ Buka [http://localhost:3000](http://localhost:3000) di browser untuk mengakses d
 | `AGENT_TEMPERATURE` | `0.3` | Temperature LLM (0 = deterministik, 1 = kreatif) |
 | `AGENT_MAX_ITERATIONS` | `10` | Maksimal iterasi tool calling per request |
 | `ADMIN_SECRET` | - | **(Wajib untuk production)** Token autentikasi admin API routes |
+| `ALLOWED_ORIGIN` | - | **(Wajib untuk production)** URL origin yang diizinkan untuk CSRF validation (mis. `https://yourdomain.com`) |
 
 File `.env` di root project:
 
@@ -802,6 +906,9 @@ AGENT_MAX_ITERATIONS="10"
 
 # Auth (Wajib untuk production)
 ADMIN_SECRET="your-secret-token-here"
+
+# CSRF Protection (Wajib untuk production)
+ALLOWED_ORIGIN="https://yourdomain.com"
 ```
 
 ---
@@ -816,6 +923,13 @@ Selain model-model dasar (Customer, Conversation, Message, Knowledge, FollowUp, 
 | `VectorEmbedding` | Stored embeddings untuk semantic search |
 | `AgentSession` | Sesi percakapan agent (session management) |
 | `HumanApprovalQueue` | Antrian approval admin untuk aksi berdampak tinggi |
+
+### Field Keamanan Tambahan
+
+| Model | Field | Tipe | Deskripsi |
+|:------|:------|:-----|:----------|
+| `AgentSession` | `cumulativeStockChanges` | Int (default: 0) | Menyimpan jumlah kumulatif perubahan stok per sesi untuk mencegah split-request bypass |
+| `HumanApprovalQueue` | `payloadHash` | String (nullable) | SHA-256 hash payload untuk verifikasi integritas sebelum eksekusi aksi yang di-approve |
 
 ---
 
@@ -1011,11 +1125,13 @@ turso db tokens create si-admin
 
 - [ ] Set `OPENAI_API_KEY` (valid dan memiliki saldo)
 - [ ] Set `ADMIN_SECRET` (gunakan random string min. 32 karakter)
+- [ ] Set `ALLOWED_ORIGIN` (set ke URL domain Anda untuk CSRF protection, mis. `https://yourdomain.com`)
 - [ ] HTTPS/SSL aktif
 - [ ] Database sudah di-migrate (`npx prisma db push`)
 - [ ] Backup strategy untuk database
 - [ ] Monitor disk space (untuk SQLite)
 - [ ] Rate limit sesuai kebutuhan traffic (default: 20 req/60s per IP)
+- [ ] `NODE_ENV=production` untuk mengaktifkan error masking
 
 ---
 
